@@ -205,6 +205,102 @@
   font-size: var(--font-size-secondary);
 }
 
+.recover-page {
+  min-height: calc(100vh - 70px);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-1) 0%,
+    var(--color-primary-2) 50%,
+    var(--color-primary-3) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xxl) var(--spacing-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.recover-page::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  animation: float 6s ease-in-out infinite;
+}
+
+.recover-page::after {
+  content: "";
+  position: absolute;
+  bottom: -30%;
+  left: -5%;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+  animation: float 8s ease-in-out infinite reverse;
+}
+
+.recover-card {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xxl);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 10;
+  animation: slideInUp 0.5s ease-out;
+}
+
+.recover-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.recover-header h1 {
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-1),
+    var(--color-primary-2)
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--spacing-xs);
+}
+
+.recover-header p {
+  color: #666;
+  font-size: var(--font-size-secondary);
+  margin: 0;
+}
+
+.recover-form {
+  display: flex;
+  flex-direction: column;
+}
+
+#code-group input {
+  letter-spacing: 0.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--color-primary-1);
+}
+
+@media (max-width: 480px) {
+  .recover-card {
+    padding: var(--spacing-xl) var(--spacing-lg);
+  }
+}
 
 @media (max-width: 480px) {
   .auth-card {

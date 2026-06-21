@@ -47,6 +47,10 @@ include ROOT . '/view/layouts/header.php';
       Nao tem conta?
       <a href="<?php echo routeUrl('cadastro'); ?>">Cadastre-se</a>
     </p>
+    <p class="auth-switch">
+      Esqueceu a senha?
+      <a href="<?php echo routeUrl('recuperar'); ?>">Recuper senha</a>
+    </p>
 
   </div>
 </section>

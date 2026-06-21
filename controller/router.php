@@ -84,6 +84,12 @@ switch ($pagina) {
     case 'login':
         $controller->login();
         break;
+    case 'recuperar':
+        $controller->recuperar();
+        break;
+    case 'nova-senha':
+        $controller->novaSenha();
+        break;
     case 'logout':
         $controller->logout();
         break;

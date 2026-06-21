@@ -273,7 +273,92 @@ class usuarioController {
 
         require_once ROOT . '/view/login/index.php';
     }
+    public function recuperar(){
+    $mensagem = '';
+    $tipoMensagem = '';
 
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $acao = $_POST['acao'] ?? '';
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+
+        if (!$email) {
+            $mensagem = 'Informe um e-mail válido.';
+            $tipoMensagem = 'erro';
+        } elseif ($acao === 'enviar') {
+            $model = new usuarioModel();
+            $usuario = $model->getUsuarioByEmail($email);
+
+            if ($usuario) {
+                $codigo = $this->gerarCodigoVerificacao();
+
+                $_SESSION['recover_email'] = $email;
+                $_SESSION['recover_code'] = $codigo;
+                $_SESSION['recover_expires'] = time() + 900;
+
+                $this->enviarCodigoVerificacao($email, $usuario['nome'], $codigo);
+            }
+
+            $mensagem = 'Se este e-mail estiver cadastrado, você receberá um código em breve.';
+            $tipoMensagem = 'sucesso';
+
+        } elseif ($acao === 'verificar') {
+            $codigo = trim($_POST['verificationCode'] ?? '');
+
+            if (empty($_SESSION['recover_code']) || empty($_SESSION['recover_email'])) {
+                $mensagem = 'Sessão expirada. Solicite o código novamente.';
+                $tipoMensagem = 'erro';
+            } elseif (time() > ($_SESSION['recover_expires'] ?? 0)) {
+                $mensagem = 'Código expirado. Solicite um novo.';
+                $tipoMensagem = 'erro';
+                unset($_SESSION['recover_code'], $_SESSION['recover_email'], $_SESSION['recover_expires']);
+            } elseif ($codigo !== $_SESSION['recover_code']) {
+                $mensagem = 'Código inválido. Tente novamente.';
+                $tipoMensagem = 'erro';
+            } else {
+                $this->redirect('nova-senha');
+            }
+        }
+    }
+
+    require_once ROOT . '/view/recuperar-senha/index.php';
+}
+public function novaSenha() {
+    $mensagem = '';
+    $tipoMensagem = '';
+
+    if (empty($_SESSION['recover_email'])) {
+        $this->redirect('recuperar');
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $password = trim($_POST['password'] ?? '');
+        $confirmPassword = trim($_POST['confirmPassword'] ?? '');
+
+        if (empty($password) || empty($confirmPassword)) {
+            $mensagem = 'Preencha todos os campos.';
+            $tipoMensagem = 'erro';
+        } elseif (strlen($password) < 8) {
+            $mensagem = 'A senha deve ter pelo menos 8 caracteres.';
+            $tipoMensagem = 'erro';
+        } elseif ($password !== $confirmPassword) {
+            $mensagem = 'As senhas não coincidem.';
+            $tipoMensagem = 'erro';
+        } else {
+            $model = new usuarioModel();
+            if ($model->atualizarSenha($_SESSION['recover_email'], $password)) {
+                unset($_SESSION['recover_email'], $_SESSION['recover_code'], $_SESSION['recover_expires']);
+                $mensagem = 'Senha atualizada com sucesso!';
+                $tipoMensagem = 'sucesso';
+                $this->redirect('login');
+            } else {
+                $mensagem = 'Erro ao atualizar a senha. Tente novamente.';
+                $tipoMensagem = 'erro';
+            }
+        }
+    }
+
+    require_once ROOT . '/view/nova-senha/index.php';
+}
     public function perfil() {
         $mensagem = '';
         $tipoMensagem = '';

@@ -36,7 +36,20 @@ class usuarioModel {
             error_log('[CLOUDINARY ERROR] Falha ao inicializar: ' . $e->getMessage());
         }
     }
+public function atualizarSenha(string $email, string $novaSenha): bool {
+    if (!$this->conexao) {
+        return false;
+    }
 
+    try {
+        $hash = password_hash($novaSenha, PASSWORD_DEFAULT);
+        $stmt = $this->conexao->prepare("UPDATE usuarios SET senha = ? WHERE email = ?");
+        return $stmt->execute([$hash, $email]);
+    } catch (Exception $e) {
+        error_log('[DB ERROR] atualizarSenha: ' . $e->getMessage());
+        return false;
+    }
+}
     // Upload de foto do usuario para Cloudinary
     public function uploadFotoUsuario(string $email, string $caminhoArquivo): array {
         if (!file_exists($caminhoArquivo)) {
