@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerenciar Níveis - Admin</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        padding: 40px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #333;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      input[type="email"],
+      select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+      }
+
+      input[type="email"]:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .nivel-description {
+        background: #f8f9ff;
+        padding: 12px;
+        border-radius: 6px;
+        margin-top: 8px;
+        font-size: 13px;
+        color: #666;
+        border-left: 4px solid #667eea;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      button {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .btn-submit {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-submit:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .btn-reset {
+        background: #f0f0f0;
+        color: #333;
+      }
+
+      .btn-reset:hover {
+        background: #e0e0e0;
+      }
+
+      .status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 6px;
+        display: none;
+        font-size: 14px;
+      }
+
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        display: block;
+      }
+
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        display: block;
+      }
+
+      .status.loading {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+        display: block;
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 2px solid #0c5460;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .info-box {
+        background: #e8f4f8;
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 30px;
+        font-size: 13px;
+        color: #333;
+      }
+
+      .info-box strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .info-box p {
+        margin: 6px 0;
+      }
+
+      .warning-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 20px;
+        font-size: 13px;
+        color: #856404;
+      }
+
+      .warning-box strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>👥 Gerenciar Níveis</h1>
+      <p class="subtitle">Alterar nível de acesso de usuários (Admin Only)</p>
+
+      <form id="nivelForm" onsubmit="submitForm(event)">
+        <div class="form-group">
+          <label for="email">Email do Usuário *</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            required
+            placeholder="usuario@exemplo.com"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="nivel">Novo Nível *</label>
+          <select
+            id="nivel"
+            name="nivel"
+            required
+            onchange="atualizarDescricao()"
+          >
+            <option value="">-- Selecione um nível --</option>
+            <option value="usuario">usuario</option>
+            <option value="anfitriao">anfitriao</option>
+            <option value="admin">admin</option>
+          </select>
+          <div
+            id="nivelDesc"
+            class="nivel-description"
+            style="display: none"
+          ></div>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="btn-submit">Alterar Nível</button>
+          <button type="reset" class="btn-reset">Limpar</button>
+        </div>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <div class="info-box">
+        <strong>ℹ️ Descrição dos Níveis:</strong>
+        <p>
+          <strong>usuario</strong> - Usuário comum pode fazer reservas e avaliar
+          hospedagens
+        </p>
+        <p>
+          <strong>anfitriao</strong> - Gerencia hostels e oferece hospedagem
+        </p>
+        <p>
+          <strong>admin</strong> - Acesso total ao sistema e gerenciamento de
+          usuários
+        </p>
+      </div>
+
+      <div class="warning-box">
+        <strong>⚠️ Atenção:</strong>
+        <p>
+          Apenas administradores podem alterar níveis de usuário. Certifique-se
+          de ter permissão antes de fazer alterações.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("nivelForm");
+      const status = document.getElementById("status");
+      const emailInput = document.getElementById("email");
+      const nivelSelect = document.getElementById("nivel");
+      const nivelDesc = document.getElementById("nivelDesc");
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      const nivelDescricoes = {
+        usuario: "Usuário comum que pode fazer reservas e avaliar hospedagens.",
+        anfitriao: "Host que oferece hospedagem e pode gerenciar seus hostels.",
+        admin:
+          "Administrador com acesso total ao sistema e gerenciamento de usuários.",
+      };
+
+      function atualizarDescricao() {
+        const nivel = nivelSelect.value;
+        if (nivel && nivelDescricoes[nivel]) {
+          nivelDesc.textContent = nivelDescricoes[nivel];
+          nivelDesc.style.display = "block";
+        } else {
+          nivelDesc.style.display = "none";
+        }
+      }
+
+      function showStatus(message, type) {
+        status.className = "status " + type;
+        if (type === "loading") {
+          status.innerHTML = '<span class="spinner"></span>' + message;
+        } else {
+          status.innerHTML = message;
+        }
+      }
+
+      function submitForm(event) {
+        event.preventDefault();
+
+        const email = emailInput.value.trim();
+        const nivel = nivelSelect.value;
+
+        if (!email || !nivel) {
+          showStatus("Preencha todos os campos.", "error");
+          return;
+        }
+
+        showStatus("Processando...", "loading");
+        submitBtn.disabled = true;
+
+        const payload = {
+          email: email,
+          nivel: nivel,
+        };
+
+        fetch("/index.php?pagina=api/alterar-nivel", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.sucesso) {
+              showStatus(
+                '✓ Nível do usuário alterado para "' +
+                  data.nivel +
+                  '" com sucesso!',
+                "success",
+              );
+              form.reset();
+              nivelDesc.style.display = "none";
+              setTimeout(() => {
+                status.innerHTML = "";
+              }, 3000);
+            } else {
+              showStatus("❌ Erro: " + data.mensagem, "error");
+            }
+          })
+          .catch((error) => {
+            showStatus(
+              "❌ Erro ao comunicar com servidor: " + error.message,
+              "error",
+            );
+          })
+          .finally(() => {
+            submitBtn.disabled = false;
+          });
+      }
+
+      // Limpar status ao focar nos campos
+      emailInput.addEventListener("focus", () => {
+        status.innerHTML = "";
+      });
+
+      nivelSelect.addEventListener("change", atualizarDescricao);
+    </script>
+  </body>
+</html>

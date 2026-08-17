@@ -1,0 +1,406 @@
+
+.breadcrumb {
+  background-color: var(--color-light-gray);
+  padding: var(--spacing-lg) 0;
+  border-bottom: 1px solid var(--color-medium-gray);
+}
+
+.breadcrumb a {
+  color: var(--color-primary-1);
+  font-size: var(--font-size-secondary);
+  transition: color var(--transition-fast);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-primary-2);
+  text-decoration: underline;
+}
+
+.breadcrumb span {
+  color: #666;
+  margin: 0 var(--spacing-sm);
+}
+
+/* Detalhes do Hostel */
+.hostel-details {
+  padding: var(--spacing-xl) 0;
+  background-color: var(--color-white);
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: var(--spacing-xl);
+}
+
+/* Galeria de Imagens */
+.details-gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.gallery-main {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: 400px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.gallery-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-thumb {
+  width: 100%;
+  height: 150px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-thumb:hover {
+  border-color: var(--color-primary-1);
+}
+
+/* Informações Principais */
+.details-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.details-header h1 {
+  margin-bottom: var(--spacing-sm);
+}
+
+.details-location {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-secondary);
+  color: #666;
+  margin-bottom: var(--spacing-md);
+}
+
+.details-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.rating-stars {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.rating-stars span:first-child {
+  color: #ffc107;
+  font-size: 18px;
+}
+
+.rating-reviews {
+  font-size: var(--font-size-secondary);
+  color: #666;
+}
+
+/* Descrição */
+.details-description {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-light-gray);
+}
+
+.details-description h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.details-description p {
+  line-height: 1.8;
+  color: #666;
+}
+
+/* Comodidades */
+.details-amenities {
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-light-gray);
+}
+
+.details-amenities h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.amenities-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+}
+
+.amenity-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-light-gray);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-secondary);
+}
+
+.amenity-icon {
+  font-size: 20px;
+}
+
+/* Informações Adicionais */
+.details-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-light-gray);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: var(--font-size-caption);
+  color: #666;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.info-value {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+  color: var(--color-dark-gray);
+}
+
+/* Sidebar de Booking */
+.booking-sidebar {
+  position: sticky;
+  top: 80px;
+  height: fit-content;
+  background-color: var(--color-light-gray);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+}
+
+.booking-card {
+  background-color: var(--color-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.booking-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.booking-price-label {
+  font-size: var(--font-size-secondary);
+  color: #666;
+}
+
+.booking-price-value {
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-primary-1), var(--color-primary-2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.booking-price-unit {
+  font-size: var(--font-size-secondary);
+  color: #666;
+}
+
+.booking-form {
+  margin-bottom: var(--spacing-lg);
+}
+
+.booking-form .form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.booking-form label {
+  font-size: var(--font-size-secondary);
+  font-weight: 600;
+}
+
+.booking-form input {
+  font-size: var(--font-size-secondary);
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.booking-button {
+  width: 100%;
+  margin-bottom: var(--spacing-md);
+}
+
+.booking-info {
+  font-size: var(--font-size-caption);
+  color: #666;
+  text-align: center;
+  padding: var(--spacing-md);
+  background-color: var(--color-light-gray);
+  border-radius: var(--radius-md);
+}
+
+/* Avaliações */
+.details-reviews {
+  margin-top: var(--spacing-xl);
+}
+
+.details-reviews h3 {
+  margin-bottom: var(--spacing-lg);
+}
+
+.review-item {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-light-gray);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: var(--spacing-md);
+}
+
+.review-author {
+  font-weight: 600;
+  color: var(--color-dark-gray);
+}
+
+.review-rating {
+  color: #ffc107;
+}
+
+.review-date {
+  font-size: var(--font-size-caption);
+  color: #666;
+}
+
+.review-text {
+  font-size: var(--font-size-secondary);
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Hostels Relacionados */
+.related-hostels {
+  background-color: var(--color-light-gray);
+  padding: var(--spacing-xl) 0;
+}
+
+.related-hostels h2 {
+  margin-bottom: var(--spacing-xl);
+}
+
+/* Modal de Booking */
+.booking-summary {
+  background-color: var(--color-light-gray);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.booking-summary p {
+  font-size: var(--font-size-body);
+  margin: 0;
+}
+
+.booking-summary strong {
+  color: var(--color-primary-1);
+  font-size: var(--font-size-subtitle);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-main {
+    height: 300px;
+  }
+
+  .details-gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gallery-thumb {
+    height: 120px;
+  }
+
+  .booking-sidebar {
+    position: static;
+    margin-top: var(--spacing-xl);
+  }
+
+  .amenities-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .details-info {
+    grid-template-columns: 1fr;
+  }
+
+  .related-hostels .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .details-gallery {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .gallery-main {
+    height: 250px;
+  }
+
+  .gallery-thumb {
+    height: 100px;
+  }
+
+  .details-header h1 {
+    font-size: 24px;
+  }
+
+  .booking-price-value {
+    font-size: 24px;
+  }
+
+  .related-hostels .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-card {
+    padding: var(--spacing-md);
+  }
+}

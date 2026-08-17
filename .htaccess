@@ -1,0 +1,43 @@
+Options -Indexes
+RewriteEngine On
+
+# ── Sitemap XML ─────────────────────────────────────────────────────────────
+RewriteRule ^sitemap\.xml$                      config/sitemap.php                              [L,QSA]
+
+# ── Mapa do site HTML ────────────────────────────────────────────────────────
+RewriteRule ^mapa-do-site/?$                    controller/router.php?pagina=mapa-do-site       [L,QSA]
+
+# ── Detalhe de hostel por slug: /hostel/rio-beach-hostel ────────────────────
+RewriteRule ^hostel/([a-z0-9\-]+)/?$            controller/router.php?pagina=hostel&slug=$1     [L,QSA]
+
+# ── Hostels por categoria: /hostels/categoria/praia ─────────────────────────
+RewriteRule ^hostels/categoria/([a-z0-9\-]+)/?$ controller/router.php?pagina=hostels&categoria=$1 [L,QSA]
+
+# ── Listagem geral: /hostels ─────────────────────────────────────────────────
+RewriteRule ^hostels/?$                         controller/router.php?pagina=hostels            [L,QSA]
+
+# ── Páginas simples ──────────────────────────────────────────────────────────
+RewriteRule ^login/?$                           controller/router.php?pagina=login              [L,QSA]
+RewriteRule ^cadastro/?$                        controller/router.php?pagina=cadastro           [L,QSA]
+RewriteRule ^verificar/?$                       controller/router.php?pagina=verificar          [L,QSA]
+RewriteRule ^perfil/?$                          controller/router.php?pagina=perfil             [L,QSA]
+RewriteRule ^politica-privacidade/?$            controller/router.php?pagina=politica           [L,QSA]
+RewriteRule ^sair/?$                            controller/router.php?pagina=logout             [L,QSA]
+
+# ── Home ─────────────────────────────────────────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^$                                  controller/router.php?pagina=home               [L,QSA]
+
+# ── Segurança: bloqueia acesso a arquivos sensíveis ──────────────────────────
+<FilesMatch "\.(env|sql|log|sh|bak)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# ── Headers de segurança ─────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
