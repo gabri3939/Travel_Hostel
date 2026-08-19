@@ -19,7 +19,7 @@ try {
     $conexao = new Conexao();
     $pdo     = $conexao->conectar();
     if ($pdo) {
-        $hostels    = $pdo->query("SELECT slug, data_cadastro FROM hostels WHERE slug IS NOT NULL ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+        $hostels    = $pdo->query("SELECT slug, data_cadastro FROM hostels WHERE slug IS NOT NULL AND status_aprovacao = 'aprovado' ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
         $categorias = $pdo->query("SELECT slug FROM categorias ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Exception $e) {}

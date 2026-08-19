@@ -134,6 +134,28 @@ $avatarUrl = !empty($_SESSION['usuario_avatar'])
         </div>
       </div>
 
+      <?php if (($usuario['nivel'] ?? 'usuario') === 'usuario'): ?>
+        <section class="profile-section profile-section--card" id="solicitar-anfitriao" style="margin-top:24px;">
+          <div class="profile-section-header"><h2>Quer anunciar seu recinto?</h2></div>
+          <div class="profile-section-body">
+            <?php if (($usuario['solicitacao_anfitriao'] ?? 'nenhuma') === 'pendente'): ?>
+              <p>Sua solicitacao para ser anfitriao esta em analise pelo administrador.</p>
+            <?php elseif (($usuario['solicitacao_anfitriao'] ?? 'nenhuma') === 'rejeitada'): ?>
+              <p>Sua solicitacao anterior foi rejeitada. Revise seus dados e envie uma nova solicitacao.</p>
+              <form method="POST" action="<?php echo routeUrl('perfil'); ?>"><input type="hidden" name="acao" value="solicitar_anfitriao"><button type="submit" class="btn btn-primary">Solicitar novamente</button></form>
+            <?php else: ?>
+              <p>Solicite acesso para cadastrar seus recintos, enviar imagens e receber aprovacao para publica-los.</p>
+              <form method="POST" action="<?php echo routeUrl('perfil'); ?>"><input type="hidden" name="acao" value="solicitar_anfitriao"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-house-chimney"></i> Solicitar acesso de anfitriao</button></form>
+            <?php endif; ?>
+          </div>
+        </section>
+      <?php elseif (($usuario['nivel'] ?? '') === 'anfitriao'): ?>
+        <section class="profile-section profile-section--card" style="margin-top:24px;">
+          <div class="profile-section-header"><h2>Area do anfitriao</h2></div>
+          <div class="profile-section-body"><p>Voce ja pode cadastrar e acompanhar seus recintos.</p><a href="<?php echo routeUrl('anfitriao'); ?>" class="btn btn-primary">Cadastrar recinto</a></div>
+        </section>
+      <?php endif; ?>
+
     </div>
   </div>
 </section>

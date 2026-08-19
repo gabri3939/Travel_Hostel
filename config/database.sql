@@ -21,10 +21,22 @@ CREATE TABLE IF NOT EXISTS usuarios (
     senha            VARCHAR(255) NOT NULL,
     avatar           VARCHAR(255),
     nivel            ENUM('usuario', 'anfitriao', 'admin') DEFAULT 'usuario',
+    ativo            TINYINT(1) NOT NULL DEFAULT 1,
+    solicitacao_anfitriao ENUM('nenhuma', 'pendente', 'aprovada', 'rejeitada') NOT NULL DEFAULT 'nenhuma',
+    motivo_solicitacao VARCHAR(500),
     avaliacao        DECIMAL(2,1) DEFAULT 0.0,
     total_avaliacoes INT DEFAULT 0,
     data_cadastro    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Usuario administrador inicial. Senha temporaria: Admin@123
+INSERT INTO usuarios (nome, email, senha, nivel, ativo)
+SELECT 'Administrador', 'admin@travelhostel.com', '$2y$10$PBYDHH8qgdX0fzA/6HNF3eVQasYDEK5N7dwdvlSASXjAw7Q5myVem', 'admin', 1
+WHERE NOT EXISTS (
+    SELECT 1 FROM usuarios WHERE email = 'admin@travelhostel.com'
+);
+
+-- Os recintos antigos permanecem aprovados; novos cadastros entram como pendentes.
 
 -- ----------------------------------------------------------
 -- TABELA: categorias  (TAXONOMIA)
@@ -67,8 +79,21 @@ CREATE TABLE IF NOT EXISTS hostels (
     imagem_url       VARCHAR(255),
     categoria_id     INT NULL,
     palavras_chave   VARCHAR(255),
+    anfitriao_id     INT NULL,
+    status_aprovacao ENUM('aprovado', 'pendente', 'rejeitado') NOT NULL DEFAULT 'aprovado',
+    motivo_rejeicao  VARCHAR(500),
     data_cadastro    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_hostel_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL
+    CONSTRAINT fk_hostel_categoria FOREIGN KEY (categoria_id) REFERENCES categorias(id) ON DELETE SET NULL,
+    CONSTRAINT fk_hostel_anfitriao FOREIGN KEY (anfitriao_id) REFERENCES usuarios(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS hostel_imagens (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    hostel_id  INT NOT NULL,
+    caminho    VARCHAR(255) NOT NULL,
+    principal  TINYINT(1) NOT NULL DEFAULT 0,
+    data_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_imagem_hostel FOREIGN KEY (hostel_id) REFERENCES hostels(id) ON DELETE CASCADE
 );
 
 -- ----------------------------------------------------------

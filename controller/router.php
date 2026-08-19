@@ -81,6 +81,12 @@ switch ($pagina) {
     case 'perfil':
         $controller->perfil();
         break;
+    case 'admin':
+        $controller->admin();
+        break;
+    case 'anfitriao':
+        $controller->anfitriao();
+        break;
     case 'login':
         $controller->login();
         break;

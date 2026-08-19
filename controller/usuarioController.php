@@ -15,6 +15,7 @@ class usuarioController {
     private function syncUsuarioSession(array $usuario): void {
         $_SESSION['usuario_nome'] = $usuario['nome'] ?? ($_SESSION['usuario_nome'] ?? '');
         $_SESSION['usuario_email'] = $usuario['email'] ?? ($_SESSION['usuario_email'] ?? '');
+        $_SESSION['usuario_nivel'] = $usuario['nivel'] ?? ($_SESSION['usuario_nivel'] ?? 'usuario');
         $_SESSION['usuario_avatar'] = normalizeAvatarUrl($usuario['avatar'] ?? '');
     }
 
@@ -42,11 +43,16 @@ class usuarioController {
                     SELECT h.*, c.nome AS categoria_nome, c.slug AS categoria_slug, c.icone AS categoria_icone
                     FROM hostels h
                     LEFT JOIN categorias c ON c.id = h.categoria_id
-                    WHERE h.slug = :slug
+                       WHERE h.slug = :slug AND h.status_aprovacao = 'aprovado'
                     LIMIT 1
                 ");
                 $stmt->execute([':slug' => $slug]);
                 $hostel = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($hostel) {
+                    $stmtImagens = $pdo->prepare("SELECT caminho FROM hostel_imagens WHERE hostel_id = ? ORDER BY principal DESC, id ASC");
+                    $stmtImagens->execute([(int) $hostel['id']]);
+                    $hostel['imagens'] = $stmtImagens->fetchAll(PDO::FETCH_COLUMN);
+                }
             }
         } catch (Exception $e) {
         }
@@ -188,6 +194,10 @@ class usuarioController {
                 if ($resultado['sucesso']) {
                     $_SESSION['usuario_nome'] = $resultado['nome'];
                     $_SESSION['usuario_email'] = $resultado['email'];
+                    $usuarioCriado = $model->getUsuarioByEmail($resultado['email']);
+                    if ($usuarioCriado) {
+                        $this->syncUsuarioSession($usuarioCriado);
+                    }
                     unset($_SESSION['pending_user'], $_SESSION['verification_code'], $_SESSION['verification_expires']);
                     $this->redirect('home');
                 }
@@ -294,7 +304,16 @@ class usuarioController {
         $this->syncUsuarioSession($usuario);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (isset($_POST['rating'])) {
+            if (($_POST['acao'] ?? '') === 'solicitar_anfitriao') {
+                if ($model->solicitarAnfitriao((int) $usuario['id'])) {
+                    $mensagem = 'Solicitacao enviada. Aguarde a analise do administrador.';
+                    $tipoMensagem = 'sucesso';
+                    $usuario = $model->getUsuarioByEmail($usuario['email']) ?: $usuario;
+                } else {
+                    $mensagem = 'Sua solicitacao ja esta em analise ou nao pode ser enviada.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif (isset($_POST['rating'])) {
                 $nota = (int) ($_POST['rating'] ?? 0);
                 if ($nota < 1 || $nota > 5) {
                     $mensagem = 'Escolha uma nota de 1 a 5 estrelas.';
@@ -366,6 +385,151 @@ class usuarioController {
         }
 
         require_once ROOT . '/view/usuario/index.php';
+    }
+
+    public function admin() {
+        if (empty($_SESSION['usuario_email'])) {
+            $this->redirect('login');
+        }
+
+        $model = new usuarioModel();
+        $admin = $model->getUsuarioByEmail($_SESSION['usuario_email']);
+        if (!$admin || ($admin['nivel'] ?? '') !== 'admin' || (array_key_exists('ativo', $admin) && !(int) $admin['ativo'])) {
+            http_response_code(403);
+            $titulo = 'Acesso negado';
+            require_once ROOT . '/view/home/index.php';
+            return;
+        }
+
+        $mensagem = '';
+        $tipoMensagem = '';
+
+        // O admin decide primeiro o acesso de anfitriao e depois os recintos enviados.
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $acao = $_POST['acao'] ?? '';
+            $id = (int) ($_POST['id'] ?? 0);
+
+            if ($acao === 'aprovar_anfitriao' || $acao === 'rejeitar_anfitriao') {
+                $decisao = $acao === 'aprovar_anfitriao' ? 'aprovada' : 'rejeitada';
+                if ($model->decidirSolicitacaoAnfitriao($id, $decisao, $_POST['motivo'] ?? '')) {
+                    $mensagem = $decisao === 'aprovada' ? 'Solicitacao aprovada. O usuario agora e anfitriao.' : 'Solicitacao de anfitriao rejeitada.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel atualizar a solicitacao de anfitriao.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif ($acao === 'aprovar_hostel' || $acao === 'rejeitar_hostel') {
+                $status = $acao === 'aprovar_hostel' ? 'aprovado' : 'rejeitado';
+                if ($model->atualizarAprovacaoHostel($id, $status, $_POST['motivo'] ?? '')) {
+                    $mensagem = $status === 'aprovado' ? 'Recinto aprovado e publicado.' : 'Recinto rejeitado.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel atualizar a aprovacao do recinto.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif ($acao === 'editar') {
+                if ($model->atualizarUsuario($id, $_POST)) {
+                    $mensagem = 'Usuario atualizado com sucesso.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel atualizar o usuario. Confira os dados.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif ($acao === 'status') {
+                $ativo = (int) ($_POST['ativo'] ?? 0) === 1;
+                if ($id === (int) $admin['id']) {
+                    $mensagem = 'O administrador conectado nao pode ser inativado.';
+                    $tipoMensagem = 'erro';
+                } elseif ($model->alterarStatusUsuario($id, $ativo)) {
+                    $mensagem = $ativo ? 'Usuario reativado.' : 'Usuario inativado.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel alterar o status do usuario.';
+                    $tipoMensagem = 'erro';
+                }
+            }
+        }
+
+        $usuarios = $model->listarUsuarios();
+        $solicitacoesAnfitriao = $model->listarSolicitacoesAnfitriao();
+        $solicitacoesHostel = $model->listarSolicitacoesHostel();
+        foreach ($solicitacoesHostel as &$solicitacao) {
+            $solicitacao['imagens'] = $model->listarImagensHostel((int) $solicitacao['id']);
+        }
+        unset($solicitacao);
+        require_once ROOT . '/view/admin/index.php';
+    }
+
+    public function anfitriao() {
+        if (empty($_SESSION['usuario_email'])) {
+            $this->redirect('login');
+        }
+
+        $model = new usuarioModel();
+        $anfitriao = $model->getUsuarioByEmail($_SESSION['usuario_email']);
+        if (!$anfitriao || ($anfitriao['nivel'] ?? '') !== 'anfitriao' || (array_key_exists('ativo', $anfitriao) && !(int) $anfitriao['ativo'])) {
+            http_response_code(403);
+            $titulo = 'Acesso negado';
+            require_once ROOT . '/view/home/index.php';
+            return;
+        }
+
+        $mensagem = '';
+        $tipoMensagem = '';
+        $categorias = $model->listarCategorias();
+
+        // Cada solicitacao recebe imagens locais e aguarda moderacao antes de publicar.
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $arquivos = $_FILES['imagens'] ?? null;
+            $arquivosValidos = [];
+            if ($arquivos && is_array($arquivos['name'] ?? null)) {
+                foreach ($arquivos['name'] as $indice => $nomeArquivo) {
+                    if (($arquivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                        continue;
+                    }
+                    $arquivo = [
+                        'name' => $nomeArquivo,
+                        'tmp_name' => $arquivos['tmp_name'][$indice] ?? '',
+                        'error' => $arquivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE,
+                        'size' => (int) ($arquivos['size'][$indice] ?? 0),
+                    ];
+                    $mime = $arquivo['tmp_name'] && is_uploaded_file($arquivo['tmp_name']) ? mime_content_type($arquivo['tmp_name']) : false;
+                    if ($arquivo['error'] !== UPLOAD_ERR_OK || $arquivo['size'] > 5 * 1024 * 1024 || !in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+                        $arquivosValidos = [];
+                        break;
+                    }
+                    $arquivosValidos[] = $arquivo;
+                }
+            }
+
+            if (count($arquivosValidos) < 1 || count($arquivosValidos) > 8) {
+                $mensagem = 'Envie de 1 a 8 imagens JPG, PNG ou WEBP com ate 5MB cada.';
+                $tipoMensagem = 'erro';
+            } else {
+                $hostelId = $model->cadastrarSolicitacaoHostel((int) $anfitriao['id'], $_POST);
+                if (!$hostelId) {
+                    $mensagem = 'Preencha nome, cidade e preco valido para enviar a solicitacao.';
+                    $tipoMensagem = 'erro';
+                } else {
+                    $diretorio = ROOT . '/public/images/hostels';
+                    if (!is_dir($diretorio)) {
+                        mkdir($diretorio, 0755, true);
+                    }
+                    foreach ($arquivosValidos as $indice => $arquivo) {
+                        $extensao = strtolower(pathinfo($arquivo['name'], PATHINFO_EXTENSION));
+                        $nomeSeguro = bin2hex(random_bytes(16)) . '.' . $extensao;
+                        $destino = $diretorio . '/' . $nomeSeguro;
+                        if (move_uploaded_file($arquivo['tmp_name'], $destino)) {
+                            $model->salvarImagemHostel($hostelId, 'public/images/hostels/' . $nomeSeguro, $indice === 0);
+                        }
+                    }
+                    $mensagem = 'Solicitacao enviada. O recinto ficara visivel apos aprovacao do administrador.';
+                    $tipoMensagem = 'sucesso';
+                }
+            }
+        }
+
+        require_once ROOT . '/view/anfitriao/index.php';
     }
 
     public function uploadFotoCloudinary() {
