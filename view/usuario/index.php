@@ -55,13 +55,17 @@ $avatarUrl = !empty($_SESSION['usuario_avatar'])
             <div class="profile-section-body">
               <p class="profile-copy">Adicione ou troque sua foto. Aceita JPG, PNG, GIF ou WEBP com ate 2MB.</p>
 
-              <form method="POST" action="<?php echo routeUrl('perfil'); ?>" enctype="multipart/form-data" class="profile-upload-form">
-                <label for="avatar" class="profile-upload-label">Escolher imagem</label>
-                <input type="file" name="avatar" id="avatar" accept=".jpg,.jpeg,.png,.gif,.webp" class="profile-file-input">
-                <div class="profile-upload-actions">
-                  <button type="submit" class="btn btn-primary">Adicionar foto</button>
-                </div>
+              <form method="POST" action="<?php echo routeUrl('perfil'); ?>" enctype="multipart/form-data" class="profile-upload-form" id="avatarForm">
+                <input type="file" name="avatar" id="avatar" accept=".jpg,.jpeg,.png,.gif,.webp" class="profile-file-input" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('avatar').click();">Escolher imagem</button>
               </form>
+              <script>
+                document.getElementById('avatar').addEventListener('change', function() {
+                  if (this.files && this.files.length > 0) {
+                    document.getElementById('avatarForm').submit();
+                  }
+                });
+              </script>
             </div>
           </div>
 
