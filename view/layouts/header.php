@@ -64,6 +64,13 @@
     <div class="navbar-menu" id="navbarMenu">
       <a href="<?php echo routeUrl('home'); ?>" class="nav-link">Inicio</a>
       <a href="<?php echo routeUrl('hostels'); ?>" class="nav-link">Hostels</a>
+      <?php if (($_SESSION['usuario_nivel'] ?? '') === 'admin'): ?>
+        <a href="<?php echo routeUrl('admin'); ?>" class="nav-link">Dashboard</a>
+      <?php elseif (($_SESSION['usuario_nivel'] ?? '') === 'anfitriao'): ?>
+        <a href="<?php echo routeUrl('anfitriao'); ?>" class="nav-link">Meu recinto</a>
+      <?php elseif (isset($_SESSION['usuario_nome'])): ?>
+        <a href="<?php echo routeUrl('perfil'); ?>#solicitar-anfitriao" class="nav-link">Quero ser anfitriao</a>
+      <?php endif; ?>
       <a href="<?php echo routeUrl('hostels', ['categoria' => 'praia']); ?>" class="nav-link">Praia</a>
       <a href="<?php echo routeUrl('hostels', ['categoria' => 'natureza']); ?>" class="nav-link">Natureza</a>
       <a href="<?php echo routeUrl('hostels', ['categoria' => 'urbano']); ?>" class="nav-link">Urbano</a>

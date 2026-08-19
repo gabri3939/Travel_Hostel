@@ -50,6 +50,14 @@ include ROOT . '/view/layouts/header.php';
        style="width:100%;max-height:420px;object-fit:cover;border-radius:14px;margin-bottom:1.5rem;"
        onerror="this.src='https://via.placeholder.com/920x420?text=Hostel'">
 
+  <?php if (!empty($hostel['imagens']) && count($hostel['imagens']) > 1): ?>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;margin:-.7rem 0 1.5rem;">
+    <?php foreach (array_slice($hostel['imagens'], 1) as $imagem): ?>
+      <img src="<?php echo URL_BASE . '/' . htmlspecialchars(ltrim($imagem, '/')); ?>" alt="Imagem adicional de <?php echo htmlspecialchars($hostel['nome']); ?>" style="width:100%;height:100px;object-fit:cover;border-radius:8px;">
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
   <!-- Cabeçalho -->
   <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;margin-bottom:1.2rem;">
     <div>

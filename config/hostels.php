@@ -25,7 +25,7 @@ try {
                 preco_diaria, avaliacao, total_avaliacoes,
                 comodidades, camas, tipo, imagem_url
          FROM hostels
-         WHERE destaque = :destaque
+        WHERE destaque = :destaque AND status_aprovacao = 'aprovado'
          ORDER BY avaliacao DESC
          LIMIT :limite"
     );
