@@ -273,6 +273,7 @@ class usuarioController {
             if ($resultado['sucesso']) {
                 $_SESSION['usuario_nome'] = $resultado['nome'];
                 $_SESSION['usuario_email'] = $resultado['email'];
+                $_SESSION['last_activity'] = time();
                 $fullUser = $model->getUsuarioByEmail($resultado['email']);
                 if ($fullUser) {
                     $this->syncUsuarioSession($fullUser);

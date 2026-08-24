@@ -211,13 +211,32 @@ public function atualizarSenha(string $email, string $novaSenha): bool {
         return (bool) $stmt->fetch();
     }
 
+    private function getLoginAttemptKey(string $email): string {
+        return 'login_attempts_' . md5(strtolower(trim($email)));
+    }
+
+    private function getLoginBlockedKey(string $email): string {
+        return 'login_block_' . md5(strtolower(trim($email)));
+    }
+
     // Valida credenciais do usuario e retorna informacoes da sessao.
     public function login(array $dados): array {
-        $email = filter_var(trim($dados['email'] ?? ''), FILTER_VALIDATE_EMAIL);
-        $password = $dados['password'] ?? '';
+        $email = filter_var(trim((string) ($dados['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+        $password = (string) ($dados['password'] ?? '');
 
-        if (!$email || empty($password)) {
+        if (!$email || $password === '') {
             return ['sucesso' => false, 'mensagem' => 'Preencha email e senha.'];
+        }
+
+        $attemptKey = $this->getLoginAttemptKey($email);
+        $blockKey = $this->getLoginBlockedKey($email);
+
+        if (!empty($_SESSION[$blockKey]) && (int) $_SESSION[$blockKey] > time()) {
+            return ['sucesso' => false, 'mensagem' => 'Conta temporariamente bloqueada apos 5 tentativas falhas. Tente novamente em 15 minutos.'];
+        }
+
+        if (!empty($_SESSION[$blockKey]) && (int) $_SESSION[$blockKey] <= time()) {
+            unset($_SESSION[$blockKey], $_SESSION[$attemptKey]);
         }
 
         if ($this->conexao) {
@@ -225,10 +244,12 @@ public function atualizarSenha(string $email, string $novaSenha): bool {
             $stmt->execute([$email]);
             $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($usuario && password_verify($dados['password'], $usuario['senha'])) {
+            if ($usuario && password_verify($password, $usuario['senha'])) {
                 if (array_key_exists('ativo', $usuario) && !(int) $usuario['ativo']) {
                     return ['sucesso' => false, 'mensagem' => 'Esta conta esta inativa. Entre em contato com o administrador.'];
                 }
+
+                unset($_SESSION[$attemptKey], $_SESSION[$blockKey]);
 
                 return [
                     'sucesso' => true,
@@ -237,6 +258,15 @@ public function atualizarSenha(string $email, string $novaSenha): bool {
                     'email' => $usuario['email']
                 ];
             }
+        }
+
+        $attempts = (int) ($_SESSION[$attemptKey] ?? 0) + 1;
+        $_SESSION[$attemptKey] = $attempts;
+
+        if ($attempts >= 5) {
+            $_SESSION[$blockKey] = time() + 900;
+            unset($_SESSION[$attemptKey]);
+            return ['sucesso' => false, 'mensagem' => 'Conta temporariamente bloqueada apos 5 tentativas falhas. Tente novamente em 15 minutos.'];
         }
 
         return ['sucesso' => false, 'mensagem' => 'Email ou senha incorretos.'];
