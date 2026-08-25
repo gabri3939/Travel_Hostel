@@ -1,59 +1,29 @@
 # Plano de teste - Arthur
 
-## Resultado geral
+# Testes do Arthur
 
-Os testes do Arthur foram executados no ambiente local:
+Copie cada linha para a planilha.
 
-- Aplicacao: `http://localhost/Travel_Hostel/`
-- Cadastro: `http://localhost/Travel_Hostel/controller/router.php?pagina=cadastro`
-- Area do anfitriao: `http://localhost/Travel_Hostel/controller/router.php?pagina=anfitriao`
-- Banco: MySQL `travel_hostel`
+| Linha | Rota                          | O que fazer                                                                 | Mensagem/resultado                                        | Depois                                    |
+| ----- | ----------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------------------------------- |
+| 3     | `router.php?pagina=cadastro`  | Digitar um nome com 2 letras, por exemplo `Jo`.                             | Deve aparecer: `O nome deve ter pelo menos 3 caracteres.` | Tirar print da mensagem.                  |
+| 6     | `router.php?pagina=anfitriao` | Colocar mais de 500 caracteres na descricao do hostel.                      | A descricao deve ficar com no maximo 500 caracteres.      | Entrar como anfitriao e testar pela tela. |
+| 7     | `router.php?pagina=anfitriao` | Enviar uma descricao com mais de 500 caracteres ignorando o limite da tela. | O banco deve receber somente 500 caracteres.              | Conferir no banco.                        |
+| 9     | `router.php?pagina=cadastro`  | Digitar CEP, CPF e telefone.                                                | Os campos devem aplicar as mascaras automaticamente.      | Tirar print dos campos formatados.        |
+| 12    | `router.php?pagina=cadastro`  | Tentar cadastrar deixando nome, e-mail ou senha vazios.                     | O formulario nao deve ser enviado e deve mostrar erro.    | Tirar print do bloqueio.                  |
 
-## Linhas para preencher na planilha
+## O que ja foi testado
 
-Preencha a coluna **resultado alcancado** com os textos abaixo. Na coluna de prioridade, mantenha a prioridade que ja existe na planilha.
+- Linha 3: aprovado.
+- Linhas 6 e 7: aprovado no codigo; falta testar pela tela e conferir no banco.
+- Linha 9: aprovado.
+- Linha 12: aprovado.
 
-| Linha | Categoria   | Cenario de teste                               | Rota                                     | Arquivos/localizacao                                          | Resultado alcancado                                                                                                 | Status   |
-| ----- | ----------- | ---------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | -------- |
-| 3     | Formularios | Validar limite minimo de caracteres nos campos | `controller/router.php?pagina=cadastro`  | `view/cadastro/index.php`; `controller/usuarioController.php` | Aprovado - o campo nome exige no minimo 3 caracteres no navegador e no backend. O valor `Jo` foi rejeitado.         | Aprovado |
-| 6     | Formularios | Verificar tipo restrito de dados - backend     | `controller/router.php?pagina=anfitriao` | `view/anfitriao/index.php`; `model/usuarioModel.php`          | Aprovado - a descricao possui limite de 500 caracteres no formulario e e truncada para 500 caracteres no backend.   | Aprovado |
-| 7     | Formularios | Verificar tipo restrito de dados - banco       | `controller/router.php?pagina=anfitriao` | `model/usuarioModel.php`; tabela `hostels.descricao`          | Aprovado - o backend limita a descricao antes de gravar no banco, mesmo que o limite do formulario seja ignorado.   | Aprovado |
-| 9     | Formularios | Verificar as mascaras                          | `controller/router.php?pagina=cadastro`  | `view/cadastro/index.php`; `public/js/main.js`                | Aprovado - CEP, CPF e telefone foram formatados automaticamente: `12345-678`, `123.456.789-01` e `(11) 98765-4321`. | Aprovado |
-| 12    | Formularios | Validar campos obrigatorios vazios             | `controller/router.php?pagina=cadastro`  | `view/cadastro/index.php`; `controller/usuarioController.php` | Aprovado - com campos obrigatorios vazios, o navegador e o backend impedem o envio e exibem mensagem de erro.       | Aprovado |
+## O que falta fazer
 
-## O que colocar nas colunas da planilha
-
-### Arquivo/localizacao
+1. Tirar os prints.
+2. Testar a descricao pela area do anfitriao.
+3. Conferir no banco se a descricao ficou com 500 caracteres.
+4. Colocar os resultados e prints na planilha.
 
 - Linha 3: `view/cadastro/index.php; controller/usuarioController.php`
-- Linhas 6 e 7: `view/anfitriao/index.php; model/usuarioModel.php`
-- Linha 9: `view/cadastro/index.php; public/js/main.js`
-- Linha 12: `view/cadastro/index.php; controller/usuarioController.php`
-
-### Resultado esperado
-
-- Linha 3: campo deve impedir envio com menos de 3 caracteres.
-- Linhas 6 e 7: descricao deve truncar ou alertar quando passar de 500 caracteres.
-- Linha 9: mascaras devem aparecer nos campos necessarios.
-- Linha 12: formulario nao deve ser enviado sem os campos obrigatorios.
-
-### Evidencia
-
-Na coluna de evidencia ou observacao, coloque um print de cada teste. Os prints devem mostrar:
-
-1. Nome com duas letras sendo rejeitado.
-2. Campo de descricao com o limite de 500 caracteres.
-3. CEP, CPF e telefone formatados.
-4. Cadastro tentando ser enviado sem nome, e-mail ou senha.
-
-## Para completar depois
-
-- Fazer um print real da tela de cadastro com a mensagem de nome invalido.
-- Entrar com um usuario anfitriao e testar a descricao com mais de 500 caracteres pela tela de envio de hostel.
-- Confirmar no banco que a descricao gravada possui no maximo 500 caracteres.
-- Inserir os prints na planilha e preencher a coluna de observacoes.
-- Confirmar data, navegador e ambiente usados no teste.
-
-## Observacao
-
-As tarefas de login incorreto, bloqueio apos 5 tentativas, expiracao de sessao e SQL Injection pertencem ao Gabriel na planilha, nao ao Arthur.
