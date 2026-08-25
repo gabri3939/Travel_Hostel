@@ -121,6 +121,9 @@ class usuarioController {
             if (empty($nome) || empty($email) || empty($password) || empty($confirmPass)) {
                 $mensagem = 'Preencha todos os campos obrigatorios.';
                 $tipoMensagem = 'erro';
+            } elseif (strlen($nome) < 3) {
+                $mensagem = 'O nome deve ter pelo menos 3 caracteres.';
+                $tipoMensagem = 'erro';
             } elseif (!$email) {
                 $mensagem = 'Informe um e-mail valido.';
                 $tipoMensagem = 'erro';

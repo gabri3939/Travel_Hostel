@@ -27,7 +27,7 @@ include ROOT . '/view/layouts/header.php';
 
       <div class="form-group">
         <label for="name">Nome Completo *</label>
-        <input type="text" name="name" id="name" required maxlength="50"
+        <input type="text" name="name" id="name" required minlength="3" maxlength="50"
                placeholder="Seu nome completo"/>
       </div>
 

@@ -34,7 +34,7 @@ include ROOT . '/view/layouts/header.php';
           <label>Tipo de acomodacao<select name="tipo"><option>Dormitorio</option><option>Quarto privativo</option><option>Casa inteira</option><option>Camping</option></select></label>
           <label class="host-form-wide">Comodidades<input name="comodidades" placeholder="WiFi, cozinha, lavanderia, piscina"></label>
           <label class="host-form-wide">Palavras-chave<input name="palavras_chave" placeholder="praia, centro, barato"></label>
-          <label class="host-form-wide">Descricao<textarea name="descricao" required rows="6" placeholder="Conte como e o local, sua estrutura e o que o hospede encontrara..."></textarea></label>
+          <label class="host-form-wide">Descricao<textarea name="descricao" required maxlength="500" rows="6" placeholder="Conte como e o local, sua estrutura e o que o hospede encontrara..."></textarea></label>
         </div>
       </section>
 

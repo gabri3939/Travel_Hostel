@@ -413,6 +413,8 @@ public function atualizarSenha(string $email, string $novaSenha): bool {
 
         $nome = trim($dados['nome'] ?? '');
         $cidade = trim($dados['cidade'] ?? '');
+        $descricao = trim($dados['descricao'] ?? '');
+        $descricao = function_exists('mb_substr') ? mb_substr($descricao, 0, 500) : substr($descricao, 0, 500);
         $preco = (float) str_replace(',', '.', trim($dados['preco_diaria'] ?? '0'));
         if ($nome === '' || $cidade === '' || $preco <= 0) {
             return null;
@@ -434,7 +436,7 @@ public function atualizarSenha(string $email, string $novaSenha): bool {
                 $cidade,
                 trim($dados['estado'] ?? '') ?: null,
                 trim($dados['pais'] ?? 'Brasil') ?: 'Brasil',
-                trim($dados['descricao'] ?? ''),
+                $descricao,
                 $preco,
                 trim($dados['comodidades'] ?? ''),
                 max(0, (int) ($dados['camas'] ?? 0)),
