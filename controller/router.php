@@ -4,6 +4,21 @@ session_start();
 
 define('ROOT', dirname(__DIR__));
 
+if (!empty($_SESSION['usuario_email'])) {
+    $tempoInatividade = time() - (int) ($_SESSION['last_activity'] ?? time());
+    if ($tempoInatividade >= 900) {
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $parametrosCookie = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $parametrosCookie['path'], $parametrosCookie['domain'], $parametrosCookie['secure'], $parametrosCookie['httponly']);
+        }
+        session_destroy();
+        session_start();
+    } else {
+        $_SESSION['last_activity'] = time();
+    }
+}
+
 function carregarEnv() {
     $envPath = ROOT . '/.env';
     if (!file_exists($envPath)) return;
