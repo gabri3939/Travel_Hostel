@@ -13,7 +13,7 @@ $totalAdmins = count(array_filter($usuarios, static function (array $usuario): b
 $totalSolicitacoes = count($solicitacoesHostel ?? []);
 $totalSolicitacoesAnfitriao = count($solicitacoesAnfitriao ?? []);
 ?>
-<link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/admin-dashboard.css">
+<link rel="stylesheet" href="<?php echo assetUrl('css/admin-dashboard.css'); ?>">
 
 <main class="admin-dashboard">
   <div class="container">
@@ -49,6 +49,81 @@ $totalSolicitacoesAnfitriao = count($solicitacoesAnfitriao ?? []);
         <span class="admin-stat-icon"><i class="fa-solid fa-user-shield"></i></span>
         <span><strong><?php echo $totalAdmins; ?></strong><small>Administradores</small></span>
       </article>
+    </section>
+
+    <section class="admin-stats" aria-label="Resumo financeiro">
+      <article class="admin-stat admin-stat--green">
+        <span class="admin-stat-icon"><i class="fa-solid fa-sack-dollar"></i></span>
+        <span><strong>R$ <?php echo number_format($resumoFinanceiro['total_plataforma'], 2, ',', '.'); ?></strong><small>Receita da plataforma (15%)</small></span>
+      </article>
+      <article class="admin-stat admin-stat--blue">
+        <span class="admin-stat-icon"><i class="fa-solid fa-house-chimney"></i></span>
+        <span><strong>R$ <?php echo number_format($resumoFinanceiro['total_anfitrioes'], 2, ',', '.'); ?></strong><small>A repassar aos anfitrioes</small></span>
+      </article>
+      <article class="admin-stat admin-stat--amber">
+        <span class="admin-stat-icon"><i class="fa-solid fa-coins"></i></span>
+        <span><strong>R$ <?php echo number_format($resumoFinanceiro['total_bruto'], 2, ',', '.'); ?></strong><small>Volume total pago</small></span>
+      </article>
+      <article class="admin-stat admin-stat--violet">
+        <span class="admin-stat-icon"><i class="fa-solid fa-receipt"></i></span>
+        <span><strong><?php echo $resumoFinanceiro['reservas_pagas']; ?></strong><small>Reservas pagas</small></span>
+      </article>
+    </section>
+    <p style="margin:-14px 0 20px;font-size:.8rem;color:#888;">
+      * O repasse aos anfitrioes ainda e feito manualmente (o pagamento cai integralmente na conta PagBank da plataforma).
+    </p>
+
+    <!-- Mensagens enviadas pela pagina de contato. -->
+    <section class="admin-panel admin-approval-panel">
+      <div class="admin-panel-header">
+        <div><h2>Mensagens de contato</h2><p>Enviadas pelo formulario publico de contato.</p></div>
+        <span class="admin-count"><?php echo count(array_filter($mensagensContato, static fn($m) => $m['status'] === 'nova')); ?> novas</span>
+      </div>
+
+      <?php if (empty($mensagensContato)): ?>
+        <p class="admin-empty">Nenhuma mensagem recebida ainda.</p>
+      <?php else: ?>
+        <div class="admin-host-requests">
+          <?php foreach ($mensagensContato as $msgContato): ?>
+            <div class="admin-host-request" style="flex-direction:column;align-items:stretch;gap:10px;">
+              <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <strong><?php echo htmlspecialchars($msgContato['assunto']); ?></strong>
+                  <span> — <?php echo htmlspecialchars($msgContato['nome']); ?> (<?php echo htmlspecialchars($msgContato['email']); ?>)</span>
+                  <small style="display:block;color:#888;"><?php echo (new DateTimeImmutable($msgContato['criado_em']))->format('d/m/Y H:i'); ?></small>
+                </div>
+                <span class="admin-status admin-status--<?php echo $msgContato['status'] === 'respondida' ? 'active' : 'inactive'; ?>">
+                  <?php echo ['nova' => 'Nova', 'lida' => 'Lida', 'respondida' => 'Respondida'][$msgContato['status']]; ?>
+                </span>
+              </div>
+              <p style="margin:0;color:#444;"><?php echo nl2br(htmlspecialchars($msgContato['mensagem'])); ?></p>
+
+              <?php if ($msgContato['status'] === 'respondida'): ?>
+                <div style="background:#f0fdf4;border-left:3px solid #16a34a;padding:8px 12px;border-radius:6px;">
+                  <strong style="font-size:.85rem;color:#15803d;">Sua resposta:</strong>
+                  <p style="margin:4px 0 0;color:#333;"><?php echo nl2br(htmlspecialchars($msgContato['resposta'])); ?></p>
+                </div>
+              <?php else: ?>
+                <div class="admin-request-actions">
+                  <?php if ($msgContato['status'] === 'nova'): ?>
+                    <form method="POST" action="<?php echo routeUrl('admin'); ?>">
+                      <input type="hidden" name="acao" value="marcar_lida">
+                      <input type="hidden" name="id" value="<?php echo (int) $msgContato['id']; ?>">
+                      <button type="submit" class="admin-button admin-button--status"><i class="fa-solid fa-eye"></i> Marcar como lida</button>
+                    </form>
+                  <?php endif; ?>
+                  <form method="POST" action="<?php echo routeUrl('admin'); ?>" class="admin-reject-form" style="flex:1;">
+                    <input type="hidden" name="acao" value="responder_mensagem">
+                    <input type="hidden" name="id" value="<?php echo (int) $msgContato['id']; ?>">
+                    <input name="resposta" placeholder="Escreva a resposta (enviada por e-mail)" style="flex:1;">
+                    <button type="submit" class="admin-button admin-button--approve"><i class="fa-solid fa-reply"></i> Responder</button>
+                  </form>
+                </div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </section>
 
     <!-- Primeira etapa: aprovar o usuario para liberar a area de anfitriao. -->
@@ -90,11 +165,22 @@ $totalSolicitacoesAnfitriao = count($solicitacoesAnfitriao ?? []);
         <div class="admin-requests">
           <?php foreach ($solicitacoesHostel as $solicitacao): ?>
             <article class="admin-request">
-              <div class="admin-request-gallery">
-                <?php foreach (array_slice($solicitacao['imagens'] ?? [], 0, 4) as $imagem): ?>
-                  <img src="<?php echo URL_BASE . '/' . htmlspecialchars(ltrim($imagem, '/')); ?>" alt="Imagem de <?php echo htmlspecialchars($solicitacao['nome']); ?>">
+              <?php
+                $urlsImagensSolicitacao = array_map(
+                    static fn($img) => URL_BASE . '/' . ltrim($img, '/'),
+                    $solicitacao['imagens'] ?? []
+                );
+              ?>
+              <div class="admin-request-gallery" data-imagens="<?php echo htmlspecialchars(json_encode($urlsImagensSolicitacao)); ?>">
+                <?php foreach (array_slice($urlsImagensSolicitacao, 0, 4) as $indiceImg => $imagem): ?>
+                  <div class="admin-gallery-thumb" data-index="<?php echo $indiceImg; ?>">
+                    <img src="<?php echo htmlspecialchars($imagem); ?>" alt="Imagem de <?php echo htmlspecialchars($solicitacao['nome']); ?>">
+                    <?php if ($indiceImg === 3 && count($urlsImagensSolicitacao) > 4): ?>
+                      <span class="admin-gallery-mais">+<?php echo count($urlsImagensSolicitacao) - 4; ?></span>
+                    <?php endif; ?>
+                  </div>
                 <?php endforeach; ?>
-                <?php if (empty($solicitacao['imagens'])): ?><span class="admin-no-image"><i class="fa-solid fa-image"></i></span><?php endif; ?>
+                <?php if (empty($urlsImagensSolicitacao)): ?><span class="admin-no-image"><i class="fa-solid fa-image"></i></span><?php endif; ?>
               </div>
               <div class="admin-request-content">
                 <div class="admin-request-title">
@@ -199,7 +285,108 @@ $totalSolicitacoesAnfitriao = count($solicitacoesAnfitriao ?? []);
         </table>
       </div>
     </section>
+
+    <!-- Acesso total do admin a todos os recintos, de qualquer anfitriao e status. -->
+    <?php $statusHostelAdminLabel = ['aprovado' => 'Aprovado', 'pendente' => 'Em analise', 'rejeitado' => 'Rejeitado']; ?>
+    <section class="admin-panel">
+      <div class="admin-panel-header">
+        <div>
+          <h2>Todos os recintos</h2>
+          <p>Visao completa da plataforma. Editar, desativar ou excluir qualquer recinto, de qualquer anfitriao.</p>
+        </div>
+        <span class="admin-count"><?php echo count($todosHostels); ?> recintos</span>
+      </div>
+
+      <?php if (empty($todosHostels)): ?>
+        <p class="admin-empty">Nenhum recinto cadastrado.</p>
+      <?php else: ?>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Recinto</th>
+                <th>Anfitriao</th>
+                <th>Cidade / Preco</th>
+                <th>Status</th>
+                <th class="admin-actions-heading">Acoes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($todosHostels as $h): $hAtivo = (int) $h['ativo'] === 1; ?>
+                <tr class="<?php echo $hAtivo ? '' : 'is-inactive'; ?>">
+                  <td>
+                    <form method="POST" action="<?php echo routeUrl('admin'); ?>" id="edit-adm-hostel-<?php echo (int) $h['id']; ?>">
+                      <input type="hidden" name="acao" value="editar_hostel_admin">
+                      <input type="hidden" name="id" value="<?php echo (int) $h['id']; ?>">
+                    </form>
+                    <label class="sr-only" for="nome-adm-h-<?php echo (int) $h['id']; ?>">Nome</label>
+                    <input form="edit-adm-hostel-<?php echo (int) $h['id']; ?>" id="nome-adm-h-<?php echo (int) $h['id']; ?>" name="nome" value="<?php echo htmlspecialchars($h['nome']); ?>" required>
+                    <label class="sr-only" for="cat-adm-h-<?php echo (int) $h['id']; ?>">Categoria</label>
+                    <select form="edit-adm-hostel-<?php echo (int) $h['id']; ?>" id="cat-adm-h-<?php echo (int) $h['id']; ?>" name="categoria_id" style="margin-top:6px;">
+                      <option value="">Sem categoria</option>
+                      <?php foreach ($categorias as $categoria): ?>
+                        <option value="<?php echo (int) $categoria['id']; ?>" <?php echo (int) ($h['categoria_id'] ?? 0) === (int) $categoria['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($categoria['nome']); ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </td>
+                  <td>
+                    <?php if (!empty($h['anfitriao_nome'])): ?>
+                      <?php echo htmlspecialchars($h['anfitriao_nome']); ?><br>
+                      <small style="color:#888;"><?php echo htmlspecialchars($h['anfitriao_email']); ?></small>
+                    <?php else: ?>
+                      <small style="color:#888;">Sem anfitriao (recinto de exemplo)</small>
+                    <?php endif; ?>
+                  </td>
+                  <td>
+                    <label class="sr-only" for="cidade-adm-h-<?php echo (int) $h['id']; ?>">Cidade</label>
+                    <input form="edit-adm-hostel-<?php echo (int) $h['id']; ?>" id="cidade-adm-h-<?php echo (int) $h['id']; ?>" name="cidade" value="<?php echo htmlspecialchars($h['cidade']); ?>" required>
+                    <label class="sr-only" for="estado-adm-h-<?php echo (int) $h['id']; ?>">Estado</label>
+                    <input form="edit-adm-hostel-<?php echo (int) $h['id']; ?>" id="estado-adm-h-<?php echo (int) $h['id']; ?>" name="estado" value="<?php echo htmlspecialchars($h['estado'] ?? ''); ?>" placeholder="UF" style="width:55px;">
+                    <label class="sr-only" for="preco-adm-h-<?php echo (int) $h['id']; ?>">Preco</label>
+                    <input form="edit-adm-hostel-<?php echo (int) $h['id']; ?>" id="preco-adm-h-<?php echo (int) $h['id']; ?>" name="preco_diaria" type="number" min="1" step="0.01" value="<?php echo (float) $h['preco_diaria']; ?>" required>
+                  </td>
+                  <td>
+                    <span class="admin-status admin-status--<?php echo $h['status_aprovacao'] === 'aprovado' ? 'active' : 'inactive'; ?>">
+                      <?php echo $statusHostelAdminLabel[$h['status_aprovacao']] ?? htmlspecialchars($h['status_aprovacao']); ?>
+                    </span><br>
+                    <span class="admin-status admin-status--<?php echo $hAtivo ? 'active' : 'inactive'; ?>" style="margin-top:4px;">
+                      <?php echo $hAtivo ? 'Visivel' : 'Desativado'; ?>
+                    </span>
+                  </td>
+                  <td class="admin-actions">
+                    <button form="edit-adm-hostel-<?php echo (int) $h['id']; ?>" type="submit" class="admin-button admin-button--save"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
+                    <form method="POST" action="<?php echo routeUrl('admin'); ?>">
+                      <input type="hidden" name="acao" value="status_hostel_admin">
+                      <input type="hidden" name="id" value="<?php echo (int) $h['id']; ?>">
+                      <input type="hidden" name="ativo" value="<?php echo $hAtivo ? '0' : '1'; ?>">
+                      <button type="submit" class="admin-button admin-button--status">
+                        <i class="fa-solid fa-<?php echo $hAtivo ? 'ban' : 'rotate-left'; ?>"></i> <?php echo $hAtivo ? 'Desativar' : 'Reativar'; ?>
+                      </button>
+                    </form>
+                    <form method="POST" action="<?php echo routeUrl('admin'); ?>" onsubmit="return confirm('Excluir este recinto permanentemente? So funciona se ele nao tiver reservas ou avaliacoes.');">
+                      <input type="hidden" name="acao" value="excluir_hostel">
+                      <input type="hidden" name="id" value="<?php echo (int) $h['id']; ?>">
+                      <button type="submit" class="admin-button admin-button--reject"><i class="fa-solid fa-trash"></i> Excluir</button>
+                    </form>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php endif; ?>
+    </section>
   </div>
 </main>
+
+<!-- Lightbox compartilhado das galerias de fotos (solicitacoes pendentes) -->
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Fechar">&times;</button>
+  <button type="button" class="lightbox-prev" id="lightboxPrev" aria-label="Imagem anterior">&lsaquo;</button>
+  <img src="" alt="" id="lightboxImg">
+  <button type="button" class="lightbox-next" id="lightboxNext" aria-label="Proxima imagem">&rsaquo;</button>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+<script src="<?php echo assetUrl('js/admin-gallery.js'); ?>"></script>
 
 <?php include ROOT . '/view/layouts/footer.php'; ?>

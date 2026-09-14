@@ -68,6 +68,7 @@ class Conexao {
                 'anfitriao_id' => "ALTER TABLE hostels ADD COLUMN anfitriao_id INT NULL AFTER palavras_chave",
                 'status_aprovacao' => "ALTER TABLE hostels ADD COLUMN status_aprovacao ENUM('aprovado', 'pendente', 'rejeitado') NOT NULL DEFAULT 'aprovado' AFTER anfitriao_id",
                 'motivo_rejeicao' => "ALTER TABLE hostels ADD COLUMN motivo_rejeicao VARCHAR(500) AFTER status_aprovacao",
+                'ativo' => "ALTER TABLE hostels ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1 AFTER motivo_rejeicao",
             ];
             foreach ($colunas as $nome => $sql) {
                 $stmt = $pdo->query("SHOW COLUMNS FROM hostels LIKE '{$nome}'");

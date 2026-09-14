@@ -78,7 +78,7 @@ try {
         $params[':avaliacao_min'] = $avaliacaoMin;
     }
 
-        $where[] = "h.status_aprovacao = 'aprovado'";
+        $where[] = "h.status_aprovacao = 'aprovado' AND h.ativo = 1";
     $whereSql = implode(' AND ', $where);
     $offset   = ($pagina - 1) * $porPagina;
 

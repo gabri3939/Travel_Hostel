@@ -1,0 +1,14 @@
+Options -Indexes
+
+ErrorDocument 404 /index.php?action=home
+ErrorDocument 500 /index.php?action=home
+
+<FilesMatch "^\.">
+    Order allow, deny
+    Deny from all
+</FilesMatch>
+
+<ifModuleb mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css 
+    application/javascript
+</ifModuleb>

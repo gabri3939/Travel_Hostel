@@ -19,7 +19,7 @@ try {
     $conexao = new Conexao();
     $pdo     = $conexao->conectar();
     if ($pdo) {
-        $hostels    = $pdo->query("SELECT slug, data_cadastro FROM hostels WHERE slug IS NOT NULL AND status_aprovacao = 'aprovado' ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+        $hostels    = $pdo->query("SELECT slug, data_cadastro FROM hostels WHERE slug IS NOT NULL AND status_aprovacao = 'aprovado' AND ativo = 1 ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
         $categorias = $pdo->query("SELECT slug FROM categorias ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
     }
 } catch (Exception $e) {}
@@ -57,6 +57,13 @@ $estaticas = [
     [$base . '/login',                '0.5', 'monthly'],
     [$base . '/cadastro',             '0.5', 'monthly'],
     [$base . '/politica-privacidade', '0.3', 'yearly'],
+    [$base . '/termos-de-uso',        '0.3', 'yearly'],
+    [$base . '/politica-cookies',     '0.3', 'yearly'],
+    [$base . '/seguranca',            '0.3', 'yearly'],
+    [$base . '/sobre',                '0.4', 'monthly'],
+    [$base . '/contato',              '0.4', 'monthly'],
+    [$base . '/blog',                 '0.3', 'monthly'],
+    [$base . '/faq',                  '0.4', 'monthly'],
     [$base . '/mapa-do-site',         '0.4', 'monthly'],
 ];
 foreach ($estaticas as [$loc, $pri, $freq]) {

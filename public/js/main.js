@@ -4,6 +4,7 @@ var hostelsDataFallback = [
   {
     id: 1,
     nome: "Morato Hostel Center",
+    slug: "morato-hostel-center",
     cidade: "Francisco Morato",
     estado: "SP",
     descricao: "Hostel simples e aconchegante no centro de Francisco Morato.",
@@ -16,6 +17,7 @@ var hostelsDataFallback = [
   {
     id: 2,
     nome: "Rocha Vibes Hostel",
+    slug: "rocha-vibes-hostel",
     cidade: "Franco da Rocha",
     estado: "SP",
     descricao: "Ambiente tranquilo com area verde e espaco para descanso.",
@@ -28,6 +30,7 @@ var hostelsDataFallback = [
   {
     id: 3,
     nome: "Caieiras Eco Hostel",
+    slug: "caieiras-eco-hostel",
     cidade: "Caieiras",
     estado: "SP",
     descricao: "Hostel ecologico cercado pela natureza e trilhas.",
@@ -40,6 +43,7 @@ var hostelsDataFallback = [
   {
     id: 4,
     nome: "São Paulo Downtown",
+    slug: "sao-paulo-downtown",
     cidade: "São Paulo",
     estado: "SP",
     descricao: "Hostel moderno no centro de Sao Paulo perto de tudo.",
@@ -52,6 +56,7 @@ var hostelsDataFallback = [
   {
     id: 5,
     nome: "Rio Beach Hostel",
+    slug: "rio-beach-hostel",
     cidade: "Rio de Janeiro",
     estado: "RJ",
     descricao: "Hostel na praia com vista incrivel e clima animado.",
@@ -64,6 +69,7 @@ var hostelsDataFallback = [
   {
     id: 6,
     nome: "Curitiba Green Hostel",
+    slug: "curitiba-green-hostel",
     cidade: "Curitiba",
     estado: "PR",
     descricao: "Hostel sustentavel com ambiente calmo e organizado.",
@@ -154,6 +160,9 @@ function criarCard(h) {
   var avaliacao = parseFloat(h.avaliacao).toFixed(1);
   var preco = "R$ " + parseFloat(h.preco_diaria).toFixed(2).replace(".", ",");
   var localizacao = h.cidade + (h.estado ? ", " + h.estado : "");
+  var urlDetalhe = h.slug
+    ? (typeof URL_BASE !== "undefined" ? URL_BASE : "") + "/hostel/" + h.slug
+    : "#";
 
   return (
     '<div class="hostel-card">' +
@@ -191,7 +200,9 @@ function criarCard(h) {
     preco +
     "</span>" +
     "</div>" +
-    '<button class="btn btn-primary btn-sm">Ver Detalhes</button>' +
+    '<a href="' +
+    urlDetalhe +
+    '" class="btn btn-primary btn-sm">Ver Detalhes</a>' +
     "</div>" +
     "</div>"
   );

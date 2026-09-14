@@ -38,12 +38,12 @@
 
   <link rel="sitemap" type="application/xml" href="<?php echo URL_BASE; ?>/sitemap.xml"/>
 
-  <link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/styles.css"/>
-  <link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/navbar.css"/>
-  <link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/hero.css"/>
-  <link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/hostels.css"/>
-  <link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/footer.css"/>
-  <link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/auth.css"/>
+  <link rel="stylesheet" href="<?php echo assetUrl('css/styles.css'); ?>"/>
+  <link rel="stylesheet" href="<?php echo assetUrl('css/navbar.css'); ?>"/>
+  <link rel="stylesheet" href="<?php echo assetUrl('css/hero.css'); ?>"/>
+  <link rel="stylesheet" href="<?php echo assetUrl('css/hostels.css'); ?>"/>
+  <link rel="stylesheet" href="<?php echo assetUrl('css/footer.css'); ?>"/>
+  <link rel="stylesheet" href="<?php echo assetUrl('css/auth.css'); ?>"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         crossorigin="anonymous" referrerpolicy="no-referrer"/>
   <script>

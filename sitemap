@@ -1,0 +1,38 @@
+<?xml version="1.0" encondig="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+    <loc>http://localhost/travel_hostel_v2/index.php?action=home</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    </url>
+
+<url>
+    <loc>http://localhost/travel_hostel_v2/index.php?action=hostels</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    </url>
+
+<url>
+    <loc>http://localhost/travel_hostel_v2/index.php?action=hostelDetalhe</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    </url>
+
+<url>
+    <loc>http://localhost/travel_hostel_v2/index.php?action=login</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    </url>
+
+
+<url>
+    <loc>http://localhost/travel_hostel_v2/index.php?action=cadastro</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    </url>
+
+<url>
+    <loc>http://localhost/travel_hostel_v2/index.php?action=perfil</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    </url>

@@ -21,11 +21,11 @@ try {
     $limite   = isset($_GET['limite'])   ? (int)$_GET['limite']   : 6;
 
     $stmt = $pdo->prepare(
-        "SELECT id, nome, cidade, estado, pais, descricao,
+        "SELECT id, nome, slug, cidade, estado, pais, descricao,
                 preco_diaria, avaliacao, total_avaliacoes,
                 comodidades, camas, tipo, imagem_url
          FROM hostels
-        WHERE destaque = :destaque AND status_aprovacao = 'aprovado'
+        WHERE destaque = :destaque AND status_aprovacao = 'aprovado' AND ativo = 1
          ORDER BY avaliacao DESC
          LIMIT :limite"
     );

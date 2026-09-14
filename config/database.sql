@@ -97,6 +97,31 @@ CREATE TABLE IF NOT EXISTS hostel_imagens (
 );
 
 -- ----------------------------------------------------------
+-- TABELA: reservas (reserva + status de pagamento PagBank)
+-- ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reservas (
+    id                INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id        INT NOT NULL,
+    hostel_id         INT NOT NULL,
+    data_checkin      DATE NOT NULL,
+    data_checkout     DATE NOT NULL,
+    noites            INT NOT NULL,
+    hospedes          INT NOT NULL DEFAULT 1,
+    valor_total       DECIMAL(10, 2) NOT NULL,
+    status            ENUM('pendente', 'em_analise', 'pago', 'recusado', 'cancelado') NOT NULL DEFAULT 'pendente',
+    pagbank_order_id  VARCHAR(60),
+    pagbank_charge_id VARCHAR(60),
+    pagbank_status    VARCHAR(30),
+    criado_em         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reserva_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    CONSTRAINT fk_reserva_hostel FOREIGN KEY (hostel_id) REFERENCES hostels(id)
+);
+
+CREATE INDEX idx_reservas_usuario ON reservas (usuario_id);
+CREATE INDEX idx_reservas_order   ON reservas (pagbank_order_id);
+
+-- ----------------------------------------------------------
 -- ÍNDICES DE BUSCA (TAXONOMIA)
 -- ----------------------------------------------------------
 CREATE INDEX idx_hostels_cidade            ON hostels (cidade);

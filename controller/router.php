@@ -51,6 +51,24 @@ function routeUrl(string $pagina, array $params = []): string {
     return URL_BASE . '/controller/router.php?' . $query;
 }
 
+function csrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrfValido(?string $token): bool {
+    return !empty($_SESSION['csrf_token']) && is_string($token) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// Adiciona ?v=<timestamp> aos assets estaticos para evitar cache do navegador apos cada alteracao.
+function assetUrl(string $caminhoRelativo): string {
+    $caminhoFisico = ROOT . '/public/' . ltrim($caminhoRelativo, '/');
+    $versao = is_file($caminhoFisico) ? filemtime($caminhoFisico) : time();
+    return URL_PUBLIC . '/' . ltrim($caminhoRelativo, '/') . '?v=' . $versao;
+}
+
 function normalizeAvatarUrl(?string $avatarPath): string {
     if (empty($avatarPath)) {
         return '';
@@ -64,6 +82,7 @@ function normalizeAvatarUrl(?string $avatarPath): string {
 }
 
 require_once 'usuarioController.php';
+require_once 'reservaController.php';
 
 $pagina = isset($_GET['pagina']) ? $_GET['pagina'] : 'home';
 
@@ -73,6 +92,7 @@ $categoria = isset($_GET['categoria']) ? preg_replace('/[^a-z0-9\-]/', '', strto
 if ($categoria) $_GET['categoria'] = $categoria;
 
 $controller = new usuarioController();
+$reservaController = new reservaController();
 
 switch ($pagina) {
     case 'home':
@@ -117,9 +137,58 @@ switch ($pagina) {
     case 'politica':
         $controller->politica();
         break;
+    case 'termos':
+        $controller->termos();
+        break;
+    case 'cookies':
+        $controller->cookies();
+        break;
+    case 'seguranca':
+        $controller->seguranca();
+        break;
+    case 'sobre':
+        $controller->sobre();
+        break;
+    case 'contato':
+        $controller->contato();
+        break;
+    case 'blog':
+        $controller->blog();
+        break;
+    case 'faq':
+        $controller->faq();
+        break;
     // ── Endpoint de API ─────────────────────────────────────────────────
     case 'api/upload-foto':
         $controller->uploadFotoCloudinary();
+        break;
+    // ── Reservas e pagamento (PagBank) ────────────────────────────────────
+    case 'reservar':
+        $reservaController->reservar();
+        break;
+    case 'checkout':
+        $reservaController->checkout();
+        break;
+    case 'api/pagbank-pagar':
+        $reservaController->processarPagamento();
+        break;
+    case 'api/pagbank-pix':
+        $reservaController->gerarPix();
+        break;
+    case 'api/pagbank-pix-imagem':
+        $reservaController->pixImagem();
+        break;
+    case 'api/reserva-status':
+        $reservaController->statusReserva();
+        break;
+    case 'api/pagbank-webhook':
+        $reservaController->webhook();
+        break;
+    case 'avaliar-hostel':
+        $reservaController->avaliarHostel();
+        break;
+    case 'avaliar-anfitriao':
+        $reservaController->avaliarAnfitriao();
         break;
     default:
         $controller->home();

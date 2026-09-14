@@ -17,7 +17,7 @@ try {
 
     $stmt = $pdo->query("
         SELECT c.id, c.nome, c.slug, c.descricao, c.icone,
-               COUNT(CASE WHEN h.status_aprovacao = 'aprovado' THEN h.id END) AS total_hostels
+               COUNT(CASE WHEN h.status_aprovacao = 'aprovado' AND h.ativo = 1 THEN h.id END) AS total_hostels
         FROM   categorias c
         LEFT JOIN hostels h ON h.categoria_id = c.id
         GROUP BY c.id

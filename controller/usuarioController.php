@@ -4,8 +4,34 @@ use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
 require_once ROOT . '/model/usuarioModel.php';
+require_once ROOT . '/model/reservaModel.php';
+require_once ROOT . '/model/avaliacaoModel.php';
+require_once ROOT . '/model/contatoModel.php';
 
 class usuarioController {
+
+    /**
+     * Identifica imagens enviadas sem depender exclusivamente da extensão fileinfo.
+     */
+    private function detectarMimeImagem(string $arquivo): ?string {
+        if ($arquivo === '' || !is_file($arquivo)) {
+            return null;
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $mime = finfo_file($finfo, $arquivo);
+                finfo_close($finfo);
+                if (is_string($mime) && $mime !== '') {
+                    return $mime;
+                }
+            }
+        }
+
+        $imagem = @getimagesize($arquivo);
+        return is_array($imagem) && isset($imagem['mime']) ? $imagem['mime'] : null;
+    }
 
     private function redirect(string $pagina, array $params = []): void {
         header('Location: ' . routeUrl($pagina, $params));
@@ -40,10 +66,12 @@ class usuarioController {
             $pdo = $conexao->conectar();
             if ($pdo) {
                 $stmt = $pdo->prepare("
-                    SELECT h.*, c.nome AS categoria_nome, c.slug AS categoria_slug, c.icone AS categoria_icone
+                    SELECT h.*, c.nome AS categoria_nome, c.slug AS categoria_slug, c.icone AS categoria_icone,
+                           a.nome AS anfitriao_nome
                     FROM hostels h
                     LEFT JOIN categorias c ON c.id = h.categoria_id
-                       WHERE h.slug = :slug AND h.status_aprovacao = 'aprovado'
+                    LEFT JOIN usuarios a ON a.id = h.anfitriao_id
+                       WHERE h.slug = :slug AND h.status_aprovacao = 'aprovado' AND h.ativo = 1
                     LIMIT 1
                 ");
                 $stmt->execute([':slug' => $slug]);
@@ -77,6 +105,16 @@ class usuarioController {
             ];
         }
 
+        $avaliacoesHostel = [];
+        $resumoAnfitriao = null;
+        if (!empty($hostel['id'])) {
+            $avaliacaoModel = new avaliacaoModel();
+            $avaliacoesHostel = $avaliacaoModel->listarAvaliacoesHostel((int) $hostel['id']);
+            if (!empty($hostel['anfitriao_id'])) {
+                $resumoAnfitriao = $avaliacaoModel->resumoAnfitriao((int) $hostel['anfitriao_id']);
+            }
+        }
+
         require_once ROOT . '/view/hostel/detalhe.php';
     }
 
@@ -92,7 +130,7 @@ class usuarioController {
             $conexao = new Conexao();
             $pdo = $conexao->conectar();
             if ($pdo) {
-                $hostels = $pdo->query("SELECT nome, slug FROM hostels WHERE slug IS NOT NULL ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
+                $hostels = $pdo->query("SELECT nome, slug FROM hostels WHERE slug IS NOT NULL AND status_aprovacao = 'aprovado' AND ativo = 1 ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
                 $categorias = $pdo->query("SELECT nome, slug FROM categorias ORDER BY nome")->fetchAll(PDO::FETCH_ASSOC);
             }
         } catch (Exception $e) {
@@ -158,6 +196,14 @@ class usuarioController {
 
                     if ($this->enviarCodigoVerificacao($email, $nome, $codigo)) {
                         $this->redirect('verificar');
+                    } else {
+                        error_log('[EMAIL FLOW] enviarCodigoVerificacao retornou false. ' .
+                            'MAIL_USERNAME=' . (getenv('MAIL_USERNAME') ? 'set' : 'empty') . ', ' .
+                            'MAIL_HOST=' . (getenv('MAIL_HOST') ?: 'empty') . ', ' .
+                            'MAIL_PORT=' . (getenv('MAIL_PORT') ?: 'empty') . ', ' .
+                            'PHP_SAPI=' . PHP_SAPI . ', ' .
+                            'REQUEST_METHOD=' . ($_SERVER['REQUEST_METHOD'] ?? 'none')
+                        );
                     }
 
                     $mensagem = 'Nao foi possivel enviar o codigo de verificacao. Verifique as credenciais de email no arquivo .env.';
@@ -217,6 +263,87 @@ class usuarioController {
         require_once ROOT . '/view/politica/index.php';
     }
 
+    public function termos() {
+        require_once ROOT . '/view/termos/index.php';
+    }
+
+    public function cookies() {
+        require_once ROOT . '/view/cookies/index.php';
+    }
+
+    public function seguranca() {
+        require_once ROOT . '/view/seguranca/index.php';
+    }
+
+    public function sobre() {
+        require_once ROOT . '/view/sobre/index.php';
+    }
+
+    public function contato() {
+        $mensagem = '';
+        $tipoMensagem = '';
+
+        $nomePreenchido = $_SESSION['usuario_nome'] ?? '';
+        $emailPreenchido = $_SESSION['usuario_email'] ?? '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!csrfValido($_POST['csrf_token'] ?? null)) {
+                $mensagem = 'Sessao expirada. Recarregue a pagina e tente novamente.';
+                $tipoMensagem = 'erro';
+            } else {
+                $contatoModel = new contatoModel();
+                $usuarioId = $this->getUsuarioIdSessao();
+
+                $nomePreenchido = trim($_POST['nome'] ?? '');
+                $emailPreenchido = trim($_POST['email'] ?? '');
+
+                $resultado = $contatoModel->enviarMensagem(
+                    $usuarioId,
+                    $nomePreenchido,
+                    $emailPreenchido,
+                    trim($_POST['assunto'] ?? ''),
+                    trim($_POST['mensagem'] ?? '')
+                );
+
+                $mensagem = $resultado['mensagem'];
+                $tipoMensagem = $resultado['sucesso'] ? 'sucesso' : 'erro';
+
+                if ($resultado['sucesso']) {
+                    $nomePreenchido = $_SESSION['usuario_nome'] ?? '';
+                    $emailPreenchido = $_SESSION['usuario_email'] ?? '';
+                }
+            }
+        }
+
+        $minhasMensagens = [];
+        $usuarioIdAtual = $this->getUsuarioIdSessao();
+        if ($usuarioIdAtual) {
+            $contatoModel = new contatoModel();
+            $minhasMensagens = $contatoModel->listarMensagensDoUsuario($usuarioIdAtual);
+        }
+
+        require_once ROOT . '/view/contato/index.php';
+    }
+
+    // Retorna o id do usuario logado (ou null), usado para vincular mensagens de contato sem exigir nova consulta em todo lugar.
+    private function getUsuarioIdSessao(): ?int {
+        if (empty($_SESSION['usuario_email'])) {
+            return null;
+        }
+
+        $model = new usuarioModel();
+        $usuario = $model->getUsuarioByEmail($_SESSION['usuario_email']);
+        return $usuario ? (int) $usuario['id'] : null;
+    }
+
+    public function blog() {
+        require_once ROOT . '/view/blog/index.php';
+    }
+
+    public function faq() {
+        require_once ROOT . '/view/faq/index.php';
+    }
+
     private function gerarCodigoVerificacao(): string {
         return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     }
@@ -255,7 +382,11 @@ class usuarioController {
                 . '<p>Este codigo expira em 15 minutos.</p>';
             $mail->AltBody = 'Ola ' . $nome . ', seu codigo e: ' . $codigo . ' (expira em 15 minutos)';
 
-            return $mail->send();
+            $sent = $mail->send();
+            if (!$sent) {
+                error_log('[EMAIL ERROR] PHPMailer ErrorInfo: ' . ($mail->ErrorInfo ?? 'unknown'));
+            }
+            return $sent;
         } catch (Exception $e) {
             error_log('[EMAIL ERROR] Falha ao enviar codigo para ' . $email . ': ' . $e->getMessage());
             return false;
@@ -427,21 +558,18 @@ public function novaSenha() {
                     $mensagem = 'Arquivo muito grande. Maximo de 2MB.';
                     $tipoMensagem = 'erro';
                 } else {
-                    $mimeType = mime_content_type($file['tmp_name']);
+                    $mimeType = $this->detectarMimeImagem($file['tmp_name']);
                     if (!$mimeType || !in_array($mimeType, $allowed, true)) {
                         $mensagem = 'Formato invalido. Use JPG, PNG, GIF ou WEBP.';
                         $tipoMensagem = 'erro';
                     } else {
-                        $ext = strtolower((string) pathinfo($file['name'], PATHINFO_EXTENSION));
-                        if ($ext === '') {
-                            $ext = match ($mimeType) {
-                                'image/jpeg' => 'jpg',
-                                'image/png' => 'png',
-                                'image/gif' => 'gif',
-                                'image/webp' => 'webp',
-                                default => 'jpg',
-                            };
-                        }
+                        $ext = match ($mimeType) {
+                            'image/jpeg' => 'jpg',
+                            'image/png' => 'png',
+                            'image/gif' => 'gif',
+                            'image/webp' => 'webp',
+                            default => 'jpg',
+                        };
 
                         $dir = ROOT . '/public/images/avatars';
                         if (!is_dir($dir)) {
@@ -472,6 +600,25 @@ public function novaSenha() {
                 }
             }
         }
+
+        if ($mensagem === '' && !empty($_SESSION['perfil_mensagem'])) {
+            $mensagem = $_SESSION['perfil_mensagem'];
+            $tipoMensagem = $_SESSION['perfil_tipo'] ?? 'sucesso';
+        }
+        unset($_SESSION['perfil_mensagem'], $_SESSION['perfil_tipo']);
+
+        $reservaModel = new reservaModel();
+        $avaliacaoModel = new avaliacaoModel();
+        $minhasReservas = $reservaModel->listarReservasUsuario((int) $usuario['id']);
+        foreach ($minhasReservas as &$reservaItem) {
+            $reservaItem['ja_avaliou_hostel'] = $avaliacaoModel->jaAvaliouHostel((int) $reservaItem['id']);
+            $reservaItem['ja_avaliou_anfitriao'] = $avaliacaoModel->jaAvaliouAnfitriao((int) $reservaItem['id']);
+        }
+        unset($reservaItem);
+
+        $reservasRecebidas = ($usuario['nivel'] ?? '') === 'anfitriao'
+            ? $reservaModel->listarReservasDoAnfitriao((int) $usuario['id'])
+            : [];
 
         require_once ROOT . '/view/usuario/index.php';
     }
@@ -536,6 +683,43 @@ public function novaSenha() {
                     $mensagem = 'Nao foi possivel alterar o status do usuario.';
                     $tipoMensagem = 'erro';
                 }
+            } elseif ($acao === 'marcar_lida') {
+                $contatoModel = new contatoModel();
+                $contatoModel->marcarComoLida($id);
+            } elseif ($acao === 'responder_mensagem') {
+                $contatoModel = new contatoModel();
+                $msg = $contatoModel->getMensagem($id);
+                $resposta = trim($_POST['resposta'] ?? '');
+
+                if ($msg && $contatoModel->responderMensagem($id, $resposta)) {
+                    $this->enviarRespostaContato($msg['email'], $msg['nome'], $msg['assunto'], $resposta);
+                    $mensagem = 'Resposta enviada para ' . $msg['email'] . '.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel enviar a resposta. Escreva um texto antes de enviar.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif ($acao === 'editar_hostel_admin') {
+                if ($model->atualizarHostelAdmin($id, $_POST)) {
+                    $mensagem = 'Recinto atualizado com sucesso.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel atualizar. Confira nome, cidade e preco.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif ($acao === 'status_hostel_admin') {
+                $ativoHostel = (int) ($_POST['ativo'] ?? 0) === 1;
+                if ($model->alternarStatusHostelAdmin($id, $ativoHostel)) {
+                    $mensagem = $ativoHostel ? 'Recinto reativado.' : 'Recinto desativado.';
+                    $tipoMensagem = 'sucesso';
+                } else {
+                    $mensagem = 'Nao foi possivel alterar o status do recinto.';
+                    $tipoMensagem = 'erro';
+                }
+            } elseif ($acao === 'excluir_hostel') {
+                $resultadoExclusao = $model->excluirHostel($id);
+                $mensagem = $resultadoExclusao['mensagem'];
+                $tipoMensagem = $resultadoExclusao['sucesso'] ? 'sucesso' : 'erro';
             }
         }
 
@@ -546,7 +730,53 @@ public function novaSenha() {
             $solicitacao['imagens'] = $model->listarImagensHostel((int) $solicitacao['id']);
         }
         unset($solicitacao);
+
+        $todosHostels = $model->listarTodosHostels();
+        $categorias = $model->listarCategorias();
+
+        $contatoModel = new contatoModel();
+        $mensagensContato = $contatoModel->listarMensagens();
+
+        $reservaModelAdmin = new reservaModel();
+        $resumoFinanceiro = $reservaModelAdmin->resumoFinanceiro();
+
         require_once ROOT . '/view/admin/index.php';
+    }
+
+    // Envia por e-mail a resposta do admin a uma mensagem de contato.
+    private function enviarRespostaContato(string $paraEmail, string $paraNome, string $assuntoOriginal, string $resposta): void {
+        $mailUsername = getenv('MAIL_USERNAME');
+        $mailPassword = getenv('MAIL_PASSWORD');
+        if (empty($mailUsername) || empty($mailPassword)) {
+            error_log('[EMAIL ERROR] Credenciais de email nao configuradas para responder contato.');
+            return;
+        }
+
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = getenv('MAIL_HOST') ?: 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = $mailUsername;
+            $mail->Password = $mailPassword;
+            $mail->SMTPSecure = getenv('MAIL_SMTP_SECURE') ?: 'tls';
+            $mail->Port = (int) (getenv('MAIL_PORT') ?: 587);
+            $mail->CharSet = 'UTF-8';
+
+            $mail->setFrom(getenv('MAIL_FROM') ?: $mailUsername, getenv('MAIL_FROM_NAME') ?: 'Travel Hostel');
+            $mail->addAddress($paraEmail, $paraNome);
+            $mail->isHTML(true);
+            $mail->Subject = 'Re: ' . $assuntoOriginal . ' - Travel Hostel';
+            $mail->Body = '<p>Ola ' . htmlspecialchars($paraNome) . ',</p>'
+                . '<p>Recebemos sua mensagem sobre "' . htmlspecialchars($assuntoOriginal) . '" e aqui esta nossa resposta:</p>'
+                . '<blockquote style="border-left:3px solid #3b82f6;margin:0;padding:8px 16px;color:#333;">'
+                . nl2br(htmlspecialchars($resposta))
+                . '</blockquote>'
+                . '<p>Equipe Travel Hostel</p>';
+            $mail->send();
+        } catch (Exception $e) {
+            error_log('[EMAIL ERROR] Falha ao responder contato para ' . $paraEmail . ': ' . $e->getMessage());
+        }
     }
 
     public function anfitriao() {
@@ -566,9 +796,29 @@ public function novaSenha() {
         $mensagem = '';
         $tipoMensagem = '';
         $categorias = $model->listarCategorias();
+        $acao = $_POST['acao'] ?? '';
 
-        // Cada solicitacao recebe imagens locais e aguarda moderacao antes de publicar.
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $acao === 'editar_hostel') {
+            $hostelId = (int) ($_POST['id'] ?? 0);
+            if ($model->atualizarHostelAnfitriao($hostelId, (int) $anfitriao['id'], $_POST)) {
+                $mensagem = 'Recinto atualizado com sucesso.';
+                $tipoMensagem = 'sucesso';
+            } else {
+                $mensagem = 'Nao foi possivel atualizar. Confira nome, cidade e preco.';
+                $tipoMensagem = 'erro';
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && $acao === 'status_hostel') {
+            $hostelId = (int) ($_POST['id'] ?? 0);
+            $ativo = (int) ($_POST['ativo'] ?? 0) === 1;
+            if ($model->alternarStatusHostelAnfitriao($hostelId, (int) $anfitriao['id'], $ativo)) {
+                $mensagem = $ativo ? 'Recinto reativado e visivel novamente.' : 'Recinto desativado. Ele deixa de aparecer para os viajantes.';
+                $tipoMensagem = 'sucesso';
+            } else {
+                $mensagem = 'Nao foi possivel alterar o status do recinto.';
+                $tipoMensagem = 'erro';
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Cada solicitacao recebe imagens locais e aguarda moderacao antes de publicar.
             $arquivos = $_FILES['imagens'] ?? null;
             $arquivosValidos = [];
             if ($arquivos && is_array($arquivos['name'] ?? null)) {
@@ -582,7 +832,9 @@ public function novaSenha() {
                         'error' => $arquivos['error'][$indice] ?? UPLOAD_ERR_NO_FILE,
                         'size' => (int) ($arquivos['size'][$indice] ?? 0),
                     ];
-                    $mime = $arquivo['tmp_name'] && is_uploaded_file($arquivo['tmp_name']) ? mime_content_type($arquivo['tmp_name']) : false;
+                    $mime = $arquivo['tmp_name'] && is_uploaded_file($arquivo['tmp_name'])
+                        ? $this->detectarMimeImagem($arquivo['tmp_name'])
+                        : false;
                     if ($arquivo['error'] !== UPLOAD_ERR_OK || $arquivo['size'] > 5 * 1024 * 1024 || !in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
                         $arquivosValidos = [];
                         break;
@@ -591,8 +843,8 @@ public function novaSenha() {
                 }
             }
 
-            if (count($arquivosValidos) < 1 || count($arquivosValidos) > 8) {
-                $mensagem = 'Envie de 1 a 8 imagens JPG, PNG ou WEBP com ate 5MB cada.';
+            if (count($arquivosValidos) < 1 || count($arquivosValidos) > 30) {
+                $mensagem = 'Envie de 1 a 30 imagens JPG, PNG ou WEBP com ate 5MB cada.';
                 $tipoMensagem = 'erro';
             } else {
                 $hostelId = $model->cadastrarSolicitacaoHostel((int) $anfitriao['id'], $_POST);
@@ -605,7 +857,12 @@ public function novaSenha() {
                         mkdir($diretorio, 0755, true);
                     }
                     foreach ($arquivosValidos as $indice => $arquivo) {
-                        $extensao = strtolower(pathinfo($arquivo['name'], PATHINFO_EXTENSION));
+                        $mimeArquivo = $this->detectarMimeImagem($arquivo['tmp_name']);
+                        $extensao = match ($mimeArquivo) {
+                            'image/png' => 'png',
+                            'image/webp' => 'webp',
+                            default => 'jpg',
+                        };
                         $nomeSeguro = bin2hex(random_bytes(16)) . '.' . $extensao;
                         $destino = $diretorio . '/' . $nomeSeguro;
                         if (move_uploaded_file($arquivo['tmp_name'], $destino)) {
@@ -617,6 +874,12 @@ public function novaSenha() {
                 }
             }
         }
+
+        $meusRecintos = $model->listarHostelsDoAnfitriao((int) $anfitriao['id']);
+        foreach ($meusRecintos as &$recintoComImagens) {
+            $recintoComImagens['imagens'] = $model->listarImagensHostel((int) $recintoComImagens['id']);
+        }
+        unset($recintoComImagens);
 
         require_once ROOT . '/view/anfitriao/index.php';
     }
@@ -646,7 +909,7 @@ public function novaSenha() {
             exit;
         }
 
-        $mimeType = mime_content_type($file['tmp_name']);
+        $mimeType = $this->detectarMimeImagem($file['tmp_name']);
         if (!$mimeType || !in_array($mimeType, $allowed, true)) {
             http_response_code(400);
             echo json_encode(['sucesso' => false, 'mensagem' => 'Formato invalido. Use JPG, PNG, GIF ou WEBP.']);

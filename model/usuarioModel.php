@@ -44,6 +44,7 @@ class usuarioModel {
                 'anfitriao_id' => "ALTER TABLE hostels ADD COLUMN anfitriao_id INT NULL AFTER palavras_chave",
                 'status_aprovacao' => "ALTER TABLE hostels ADD COLUMN status_aprovacao ENUM('aprovado', 'pendente', 'rejeitado') NOT NULL DEFAULT 'aprovado' AFTER anfitriao_id",
                 'motivo_rejeicao' => "ALTER TABLE hostels ADD COLUMN motivo_rejeicao VARCHAR(500) AFTER status_aprovacao",
+                'ativo' => "ALTER TABLE hostels ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1 AFTER motivo_rejeicao",
             ];
             foreach ($colunas as $nome => $sql) {
                 $stmt = $this->conexao->query("SHOW COLUMNS FROM hostels LIKE '{$nome}'");
@@ -513,6 +514,240 @@ public function atualizarSenha(string $email, string $novaSenha): bool {
             "UPDATE hostels SET status_aprovacao = ?, motivo_rejeicao = ? WHERE id = ? AND status_aprovacao = 'pendente'"
         );
         return $stmt->execute([$status, $status === 'rejeitado' ? trim($motivo) : null, $hostelId]);
+    }
+
+    // Lista os recintos que pertencem a um anfitriao, para o painel dele gerenciar.
+    public function listarHostelsDoAnfitriao(int $anfitriaoId): array {
+        if (!$this->conexao) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->conexao->prepare(
+                "SELECT h.*, c.nome AS categoria_nome
+                 FROM hostels h
+                 LEFT JOIN categorias c ON c.id = h.categoria_id
+                 WHERE h.anfitriao_id = ?
+                 ORDER BY h.data_cadastro DESC"
+            );
+            $stmt->execute([$anfitriaoId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log('[DB ERROR] listarHostelsDoAnfitriao: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Atualiza um recinto, restrito ao proprio anfitriao dono dele.
+    // Se o recinto havia sido rejeitado, a edicao o reenvia para analise do admin.
+    public function atualizarHostelAnfitriao(int $hostelId, int $anfitriaoId, array $dados): bool {
+        if (!$this->conexao || $hostelId < 1) {
+            return false;
+        }
+
+        $nome = trim($dados['nome'] ?? '');
+        $cidade = trim($dados['cidade'] ?? '');
+        $preco = (float) str_replace(',', '.', trim($dados['preco_diaria'] ?? '0'));
+
+        if ($nome === '' || $cidade === '' || $preco <= 0) {
+            return false;
+        }
+
+        $descricao = trim($dados['descricao'] ?? '');
+        $descricao = function_exists('mb_substr') ? mb_substr($descricao, 0, 500) : substr($descricao, 0, 500);
+
+        // Confirma a posse antes de atualizar. Feito separado do UPDATE porque rowCount() do
+        // MySQL conta linhas alteradas, nao linhas encontradas: salvar sem mudar nada retornaria
+        // 0 e seria confundido com "recinto nao encontrado".
+        $verifica = $this->conexao->prepare("SELECT id FROM hostels WHERE id = ? AND anfitriao_id = ?");
+        $verifica->execute([$hostelId, $anfitriaoId]);
+        if (!$verifica->fetch()) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->conexao->prepare(
+                "UPDATE hostels
+                 SET nome = ?, cidade = ?, estado = ?, pais = ?, descricao = ?, preco_diaria = ?,
+                     comodidades = ?, camas = ?, tipo = ?, categoria_id = ?, palavras_chave = ?,
+                     status_aprovacao = CASE WHEN status_aprovacao = 'rejeitado' THEN 'pendente' ELSE status_aprovacao END,
+                     motivo_rejeicao = CASE WHEN status_aprovacao = 'rejeitado' THEN NULL ELSE motivo_rejeicao END
+                 WHERE id = ? AND anfitriao_id = ?"
+            );
+            $stmt->execute([
+                $nome,
+                $cidade,
+                trim($dados['estado'] ?? '') ?: null,
+                trim($dados['pais'] ?? 'Brasil') ?: 'Brasil',
+                $descricao,
+                $preco,
+                trim($dados['comodidades'] ?? ''),
+                max(0, (int) ($dados['camas'] ?? 0)),
+                trim($dados['tipo'] ?? 'Dormitorio') ?: 'Dormitorio',
+                (int) ($dados['categoria_id'] ?? 0) ?: null,
+                trim($dados['palavras_chave'] ?? ''),
+                $hostelId,
+                $anfitriaoId,
+            ]);
+            return true;
+        } catch (Exception $e) {
+            error_log('[DB ERROR] atualizarHostelAnfitriao: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Ativa/desativa um recinto do proprio anfitriao (remocao logica, preserva reservas e avaliacoes ja feitas).
+    public function alternarStatusHostelAnfitriao(int $hostelId, int $anfitriaoId, bool $ativo): bool {
+        if (!$this->conexao || $hostelId < 1) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->conexao->prepare(
+                "UPDATE hostels SET ativo = ? WHERE id = ? AND anfitriao_id = ?"
+            );
+            $stmt->execute([$ativo ? 1 : 0, $hostelId, $anfitriaoId]);
+            return $stmt->rowCount() > 0;
+        } catch (Exception $e) {
+            error_log('[DB ERROR] alternarStatusHostelAnfitriao: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Lista todos os recintos da plataforma (qualquer status/anfitriao), para o admin.
+    public function listarTodosHostels(): array {
+        if (!$this->conexao) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->conexao->query(
+                "SELECT h.*, c.nome AS categoria_nome, a.nome AS anfitriao_nome, a.email AS anfitriao_email
+                 FROM hostels h
+                 LEFT JOIN categorias c ON c.id = h.categoria_id
+                 LEFT JOIN usuarios a ON a.id = h.anfitriao_id
+                 ORDER BY h.data_cadastro DESC"
+            );
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log('[DB ERROR] listarTodosHostels: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Edicao de qualquer recinto pelo admin (sem restricao de dono).
+    public function atualizarHostelAdmin(int $hostelId, array $dados): bool {
+        if (!$this->conexao || $hostelId < 1) {
+            return false;
+        }
+
+        $nome = trim($dados['nome'] ?? '');
+        $cidade = trim($dados['cidade'] ?? '');
+        $preco = (float) str_replace(',', '.', trim($dados['preco_diaria'] ?? '0'));
+
+        if ($nome === '' || $cidade === '' || $preco <= 0) {
+            return false;
+        }
+
+        $descricao = trim($dados['descricao'] ?? '');
+        $descricao = function_exists('mb_substr') ? mb_substr($descricao, 0, 500) : substr($descricao, 0, 500);
+
+        $verifica = $this->conexao->prepare("SELECT id FROM hostels WHERE id = ?");
+        $verifica->execute([$hostelId]);
+        if (!$verifica->fetch()) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->conexao->prepare(
+                "UPDATE hostels
+                 SET nome = ?, cidade = ?, estado = ?, pais = ?, descricao = ?, preco_diaria = ?,
+                     comodidades = ?, camas = ?, tipo = ?, categoria_id = ?, palavras_chave = ?
+                 WHERE id = ?"
+            );
+            $stmt->execute([
+                $nome,
+                $cidade,
+                trim($dados['estado'] ?? '') ?: null,
+                trim($dados['pais'] ?? 'Brasil') ?: 'Brasil',
+                $descricao,
+                $preco,
+                trim($dados['comodidades'] ?? ''),
+                max(0, (int) ($dados['camas'] ?? 0)),
+                trim($dados['tipo'] ?? 'Dormitorio') ?: 'Dormitorio',
+                (int) ($dados['categoria_id'] ?? 0) ?: null,
+                trim($dados['palavras_chave'] ?? ''),
+                $hostelId,
+            ]);
+            return true;
+        } catch (Exception $e) {
+            error_log('[DB ERROR] atualizarHostelAdmin: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function alternarStatusHostelAdmin(int $hostelId, bool $ativo): bool {
+        if (!$this->conexao || $hostelId < 1) {
+            return false;
+        }
+
+        try {
+            $stmt = $this->conexao->prepare("UPDATE hostels SET ativo = ? WHERE id = ?");
+            $stmt->execute([$ativo ? 1 : 0, $hostelId]);
+            return $stmt->rowCount() > 0;
+        } catch (Exception $e) {
+            error_log('[DB ERROR] alternarStatusHostelAdmin: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Exclui o recinto de vez. So permite quando nao ha reserva ou avaliacao vinculada a ele,
+    // para nunca apagar historico financeiro; nesses casos o admin deve desativar em vez de excluir.
+    public function excluirHostel(int $hostelId): array {
+        if (!$this->conexao || $hostelId < 1) {
+            return ['sucesso' => false, 'mensagem' => 'Recinto invalido.'];
+        }
+
+        try {
+            $stmtReservas = $this->conexao->prepare("SELECT COUNT(*) FROM reservas WHERE hostel_id = ?");
+            $stmtReservas->execute([$hostelId]);
+            if ((int) $stmtReservas->fetchColumn() > 0) {
+                return ['sucesso' => false, 'mensagem' => 'Este recinto tem reservas no historico e nao pode ser excluido. Desative-o em vez de excluir.'];
+            }
+
+            $stmtAvaliacoes = $this->conexao->prepare("SELECT COUNT(*) FROM hostel_avaliacoes WHERE hostel_id = ?");
+            $stmtAvaliacoes->execute([$hostelId]);
+            if ((int) $stmtAvaliacoes->fetchColumn() > 0) {
+                return ['sucesso' => false, 'mensagem' => 'Este recinto tem avaliacoes no historico e nao pode ser excluido. Desative-o em vez de excluir.'];
+            }
+
+            $imagens = $this->listarImagensHostel($hostelId);
+
+            $this->conexao->beginTransaction();
+            $this->conexao->prepare("DELETE FROM hostel_imagens WHERE hostel_id = ?")->execute([$hostelId]);
+            $stmtDel = $this->conexao->prepare("DELETE FROM hostels WHERE id = ?");
+            $stmtDel->execute([$hostelId]);
+            $excluiu = $stmtDel->rowCount() > 0;
+            $this->conexao->commit();
+
+            if ($excluiu) {
+                foreach ($imagens as $caminho) {
+                    $caminhoFisico = ROOT . '/' . ltrim($caminho, '/');
+                    if (is_file($caminhoFisico)) {
+                        @unlink($caminhoFisico);
+                    }
+                }
+                return ['sucesso' => true, 'mensagem' => 'Recinto excluido permanentemente.'];
+            }
+
+            return ['sucesso' => false, 'mensagem' => 'Recinto nao encontrado.'];
+        } catch (Exception $e) {
+            if ($this->conexao->inTransaction()) {
+                $this->conexao->rollBack();
+            }
+            error_log('[DB ERROR] excluirHostel: ' . $e->getMessage());
+            return ['sucesso' => false, 'mensagem' => 'Nao foi possivel excluir o recinto.'];
+        }
     }
 
     // Retorna os dados completos do usuario por email

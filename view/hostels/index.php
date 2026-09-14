@@ -8,11 +8,11 @@ $urlCanonica    = URL_BASE . '/hostels' . ($categoriaAtual ? '/categoria/' . htm
 include ROOT . '/view/layouts/header.php';
 ?>
 
-<link rel="stylesheet" href="<?php echo URL_PUBLIC; ?>/css/hostels-page.css"/>
+<link rel="stylesheet" href="<?php echo assetUrl('css/hostels-page.css'); ?>"/>
 
 <section style="background:var(--color-primary-1,#3b82f6);padding:2.5rem 1rem;text-align:center;color:#fff;">
-  <h1 style="margin:0 0 .4rem;font-size:2rem;"><?php echo htmlspecialchars($tituloPagina); ?></h1>
-  <p style="margin:0;opacity:.85;">Filtre por categoria, cidade, preço ou avaliação</p>
+  <h1 style="margin:0 0 .4rem;font-size:2rem;color:#ffff;"><?php echo htmlspecialchars($tituloPagina); ?></h1>
+  <p style="margin:0;opacity:.85;color:#ffff;">Filtre por categoria, cidade, preço ou avaliação</p>
 </section>
 
 <section style="padding:2rem 1rem;">

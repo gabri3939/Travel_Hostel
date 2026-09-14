@@ -12,7 +12,31 @@
       <li><a href="<?php echo URL_BASE; ?>/hostels">Todos os Hostels</a></li>
       <li><a href="<?php echo URL_BASE; ?>/login">Login</a></li>
       <li><a href="<?php echo URL_BASE; ?>/cadastro">Cadastro</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/perfil">Meu Perfil</a></li>
+    </ul>
+  </div>
+
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-size:1rem;color:#3b82f6;border-bottom:2px solid #e5e7eb;padding-bottom:.4rem;margin-bottom:.8rem;">
+      <i class="fa-solid fa-circle-info"></i> Institucional
+    </h2>
+    <ul style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.4rem;">
+      <li><a href="<?php echo URL_BASE; ?>/sobre">Sobre Nós</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/contato">Contato</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/blog">Blog</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/faq">FAQ</a></li>
+    </ul>
+  </div>
+
+  <div style="margin-bottom:2rem;">
+    <h2 style="font-size:1rem;color:#3b82f6;border-bottom:2px solid #e5e7eb;padding-bottom:.4rem;margin-bottom:.8rem;">
+      <i class="fa-solid fa-scale-balanced"></i> Política
+    </h2>
+    <ul style="list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.4rem;">
       <li><a href="<?php echo URL_BASE; ?>/politica-privacidade">Política de Privacidade</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/termos-de-uso">Termos de Uso</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/politica-cookies">Política de Cookies</a></li>
+      <li><a href="<?php echo URL_BASE; ?>/seguranca">Segurança</a></li>
     </ul>
   </div>
 

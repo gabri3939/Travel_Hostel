@@ -33,7 +33,7 @@ include ROOT . '/view/layouts/header.php';
       <div class="form-group">
         <label for="password">Senha</label>
         <div class="password-wrapper">
-          <input type="password" name="password" id="password" required placeholder="Sua senha"/>
+          <input type="password" name="password" id="password" required minlength="8" maxlength="20" placeholder="Sua senha"/>
           <button type="button" class="password-toggle" aria-label="Mostrar senha">
             <i class="fa-solid fa-eye"></i>
           </button>

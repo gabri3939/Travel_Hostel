@@ -39,7 +39,7 @@ include ROOT . '/view/layouts/header.php';
 
       <div class="form-group">
         <label for="cep">CEP</label>
-        <input type="text" name="cep" id="cep" maxlength="9"
+        <input type="text" name="cep" id="cep" minlength="9" maxlength="9"
                placeholder="00000-000"
                autocomplete="postal-code"
                oninput="mascaraCEP(this)"
@@ -68,14 +68,14 @@ include ROOT . '/view/layouts/header.php';
         </div>
         <div class="form-group">
           <label for="cpf">CPF</label>
-          <input type="text" name="cpf" id="cpf" maxlength="14"
+          <input type="text" name="cpf" id="cpf" minlength="14" maxlength="14"
                  placeholder="000.000.000-00"
                  oninput="mascaraCPF(this)"/>
         </div>
       </div>
       <div class="form-group">
         <label for="phone">Telefone</label>
-        <input type="tel" name="phone" id="phone" maxlength="15"
+        <input type="tel" name="phone" id="phone" minlength="14" maxlength="15"
                placeholder="(00) 00000-0000"
                oninput="mascaraTelefone(this)"/>
       </div>
@@ -89,7 +89,7 @@ include ROOT . '/view/layouts/header.php';
         <label for="password">Senha * <small>(mínimo 8 caracteres)</small></label>
         <div class="password-wrapper">
           <input type="password" name="password" id="password" required
-                 minlength="8" maxlength="255"
+                 minlength="8" maxlength="20"
                  placeholder="Sua senha"/>
           <button type="button" class="password-toggle" aria-label="Mostrar senha">
             <i class="fa-solid fa-eye"></i>
@@ -101,7 +101,7 @@ include ROOT . '/view/layouts/header.php';
         <label for="confirmPassword">Confirmar Senha *</label>
         <div class="password-wrapper">
           <input type="password" name="confirmPassword" id="confirmPassword" required
-                 minlength="8" maxlength="255"
+                 minlength="8" maxlength="20"
                  placeholder="Repita sua senha"/>
           <button type="button" class="password-toggle" aria-label="Mostrar senha">
             <i class="fa-solid fa-eye"></i>
